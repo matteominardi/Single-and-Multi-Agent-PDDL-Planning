@@ -1,0 +1,23 @@
+{
+  "name": "deliveroo",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matteominardi/Deliveroo.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/matteominardi/Deliveroo/issues"
+  },
+  "homepage": "https://github.com/matteominardi/Deliveroo#readme",
+  "dependencies": {
+    "@unitn-asa/deliveroo-js-client": "^0.0.34"
+  }
+}
