@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/matteominardi/Deliveroo#readme",
   "dependencies": {
-    "@unitn-asa/deliveroo-js-client": "^0.0.34"
+    "@unitn-asa/deliveroo-js-client": "^0.0.34",
+    "@unitn-asa/pddl-client": "^0.0.34"
   }
 }
