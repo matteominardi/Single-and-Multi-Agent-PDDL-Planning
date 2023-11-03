@@ -1,11 +1,9 @@
 import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
-import { onlineSolver, PddlDomain, PddlAction, PddlExecutor, PddlProblem, Planner, Beliefset } from "../index.js";
-
-Planner.doPlan = onlineSolver;
+import { onlineSolver, PddlExecutor, PddlProblem, Beliefset, PddlDomain, PddlAction } from "@unitn-asa/pddl-client";
 
 const client = new DeliverooApi(
     "http://localhost:8080/", 
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU2NWNkOGUxN2NhIiwibmFtZSI6Im1hdHRlbyIsImlhdCI6MTY5NDc4NzQwNX0.YGxbrwq4nLcgjFz0BcNCtOsLFo6RL548ukbCAWB50sI"
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjcxZjY0NjU0NjE3IiwibmFtZSI6Im1hdHRlbyIsImlhdCI6MTY5ODc0NzUzNH0.V9bT6YrrS37wODxh1mP34Ezu6eXNdfEMnaGmjfzxyaI"
 )
 
 /**
@@ -47,8 +45,9 @@ function distance( {x:x1, y:y1}, {x:x2, y:y2}) {
 }
 
 const db_parcels = new Map()
+// si attiva quando appare una nuova parcel nel campo visivo, sia quando ci muoviamo che quando spawna di fianco
 client.socket.on("parcels sensing", ( parcels ) => {
-    const options = [] //vorrei fare che le options venissero memorizzate sempre nell'agent, non solo quando trova nuove parcels
+    const options = [] //vorrei fare che le options venissero memorizzate sempre nell'agent, non solo quando si attiva la funzione
     let best_option = null;
     let nearest = Number.MAX_VALUE;
 
@@ -62,14 +61,13 @@ client.socket.on("parcels sensing", ( parcels ) => {
         if ( !last || last.x != p.x || last.y != p.y || last.carriedBy != p.carriedBy) 
             history.push( {x: p.x, y: p.y, reward: p.reward, carriedBy: p.carriedBy} )
     
-        if (!parcel.carriedBy)
-            options.push( [ 'go_pick_up', parcel.x, parcel.y, parcel.id ] );
+        if (!p.carriedBy)
+            options.push( [ 'go_pick_up', p.x, p.y, p.id ] );
             // myAgent.push( [ 'go_pick_up', parcel.x, parcel.y, parcel.id ] )
 
         console.log("Parcel " + p.id + " with reward " + p.reward + " is at " + p.x + " " + p.y + " and is carried by " + p.carriedBy)
     }
     
-    console.log("")
 
     for (const option of options) {
         if ( option[0] == 'go_pick_up' ) {
@@ -78,6 +76,7 @@ client.socket.on("parcels sensing", ( parcels ) => {
             if ( current_d < nearest ) {
                 best_option = option
                 nearest = current_d
+                console.log("Best option is " + best_option + " with distance " + nearest)
             }
         }
     }
@@ -85,66 +84,6 @@ client.socket.on("parcels sensing", ( parcels ) => {
     if ( best_option ) // Best option is selected
         myAgent.push( best_option )
 } )
-
-// PER ORA NON SERVE PERCHE' NON SIAMO IN MULTI AGENT
-// const db_agents = new Map()
-// client.socket.on("agents sensing", (agents) => {
-//     for (const a of agents) {
-//         if (a.x % 1 != 0 || a.y % 1 != 0) // skip intermediate values (0.6 or 0.4)
-//             continue;
-
-//         if (!db_agents.has(a.id)) {
-//             db_agents.set(a.id, [a])
-//             console.log("Hello", a.name)
-//         } else { 
-//             const history = db_agents.get(a.id)
-//             const last = history[history.length-1]
-//             const second_last = (history.length>2 ? history[history.length-2] : "no knowledge")
-            
-//             if (last != "lost") { // I was seeing him also last time
-//                 if (last.x != a.x || last.y != a.y) { // But he moved
-//                     history.push(a)
-//                     console.log("I'm seeing you moving", a.name)                
-//                 } else { // Still here but not moving
-//                 }           
-//             } else { // I see him again after some time
-//                 history.push(a)
-
-//                 if (second_last.x != a.x || second_last.y != a.y) {
-//                     console.log("Welcome back, seems that you moved", a.name)
-//                 } else {
-//                     console.log("Welcome back, seems you are still here as before", a.name)
-//                 }
-//             }
-//         }
-//     }
-
-//     for (const [id,history] of db_agents.entries()) {
-//         const last = history[history.length-1]
-//         const second_last = (history.length>1 ? history[history.length-2] : "no knowledge")
-
-//         if (!agents.map(a=>a.id).includes(id)) {
-//             // If I am not seeing him anymore
-            
-//             if (last != "lost") {
-//                 // Just went off
-//                 history.push("lost");
-//                 console.log("Bye", last.name);
-//             } else {
-//                 // A while since last time I saw him
-
-//                 console.log("Its a while that I don't see", second_last.name, "I remember him in", second_last.x, second_last.y);
-                
-//                 if ( distance(me, second_last) <= 3 ) {
-//                     console.log("I remember", second_last.name, "was within 3 tiles from here. Forget him.");
-//                     db_agents.delete(id)
-//                 }
-//             }
-//         } else { // If I am still seing him ... see above
-//             // console.log( 'still seing him', last.name )
-//         }
-//     }
-// } )
 
 
 class IntentionRevision {
@@ -188,6 +127,8 @@ class IntentionRevision {
         }
     }
 }
+
+// DA USARE COME SPUNTO PER FARE IntentionRevisionRevise
 
 // class IntentionRevisionReplace extends IntentionRevision {
 //     async push (predicate) {

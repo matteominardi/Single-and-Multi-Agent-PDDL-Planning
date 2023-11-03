@@ -16,8 +16,9 @@ async function agentLoop () {
         await client.pickup();
 
         let tried = [];
+        let chosen = false;
 
-        while ( tried.length < 4 ) {
+        while ( tried.length < 4 && !chosen) {
             
             let current = { up: 'down', right: 'left', down: 'up', left: 'right' }[previous] // backward
 
@@ -27,13 +28,25 @@ async function agentLoop () {
             
             if ( ! tried.includes(current) ) {
                 
-                if ( await client.move( current ) ) {
-                    console.log( 'moved', current );
-                    previous = current;
-                    break; // moved, continue
-                }
+                // if ( await client.move( current ) ) {
+                //     console.log( 'moved', current );
+                //     previous = current;
+                //     break; // moved, continue
+                // }
                 
-                tried.push( current );
+                // tried.push( current );
+
+                await client.move( current ).then( moved => {
+                    if ( moved ) {
+                        console.log( 'moved', current );
+                        previous = current;
+                        chosen = true;
+                    } else {
+                        console.log( 'failed', current );
+                        tried.push( current );
+                    }
+                    
+                });
                 
             }
             
