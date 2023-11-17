@@ -345,7 +345,7 @@ class DepthSearchMove extends Plan {
         
         this.log( 'DepthSearchMove', 'from',  me.x, me.y, 'to', {x, y} );
         
-        while ( me.x != x && me.y != y ) {
+        while ( me.x != x || me.y != y ) {
 
             const plan = depth_search(me, {x, y})
     

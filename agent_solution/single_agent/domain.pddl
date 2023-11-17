@@ -3,11 +3,13 @@
     (:requirements :strips)
     (:predicates
         (self ?s)
+        (opponent ?a)
         (parcel ?p)
+        (carried ?p) ; serve a capire se una parcel è un possibile obiettivo
+        (carries ?a ?p) ; serve a capire se l'agent può consegnare quella parcel
         (tile ?t)
         (delivery ?t)
         (at ?aop ?t)
-        (carries ?a ?p) ;; TODO: decide if this is needed
         (right ?t1 ?t2)
         (left ?t1 ?t2)
         (up ?t1 ?t2)
@@ -15,7 +17,7 @@
         (available ?t)
     )
     
-    (:action right
+    (:action move_right
         :parameters (?s ?from ?to)
         :precondition (and
             (self ?s)
@@ -33,7 +35,7 @@
         )
     )
 
-    (:action left
+    (:action move_left
         :parameters (?s ?from ?to)
         :precondition (and
             (self ?s)
@@ -51,7 +53,7 @@
         )
     )
 
-    (:action up
+    (:action move_up
         :parameters (?s ?from ?to)
         :precondition (and
             (self ?s)
@@ -69,7 +71,7 @@
         )
     )
 
-    (:action down
+    (:action move_down
         :parameters (?s ?from ?to)
         :precondition (and
             (self ?s)

@@ -1,8 +1,12 @@
+import {me, client} from "./index.js";
+import depth_search_daemon from "./depth_search_daemon.js";
+
+
 class IntentionRevision {
-    #intention_queue = new Array();
+    intention_queue = new Array();
 
     get intention_queue() {
-        return this.#intention_queue;
+        return this.intention_queue;
     }
 
     log(...args) {
@@ -12,26 +16,29 @@ class IntentionRevision {
     async loop() {
         while (true) {
             if (this.intention_queue.length > 0) {
-                console.log('intentionRevision.loop', this.intention_queue.map(i => i.predicate));
+                console.log('intentionRevision.loop', this.intention_queue);
 
                 // Current intention
-                const intention = this.intention_queue[0];
-
-                // Is queued intention still valid? Do I still want to achieve it?
-                // TODO this hard-coded implementation is an example
-                let id = intention.predicate[2]
-                let p = parcels.get(id)
-                if (p && p.carriedBy) {
-                    console.log('Skipping intention because no more valid', intention.predicate)
-                    continue;
-                }
-
+                const intention = new Intention(this, 
+                    [this.intention_queue[0][0], this.intention_queue[0][1], this.intention_queue[0][2]]);
+                console.log("intenion", intention)
                 // Start achieving intention
                 await intention.achieve().catch(error => {
-                    // console.log( 'Failed intention', ...intention.predicate, 'with error:', ...error )
+                    console.log( 'Failed intention', error)
                 });
-
+                console.log("intention_queue prima", this.intention_queue)
+                function removeSublists(list) {
+                    return list.filter((sublist, index) => !list.some((other, otherIndex) =>
+                      index !== otherIndex &&
+                      other[0] === sublist[0] &&
+                      other[1] === sublist[1] &&
+                      other[2] === sublist[2] &&
+                      other[3] > sublist[3]
+                    ));
+                }
+                this.intention_queue = removeSublists(this.intention_queue);
                 this.intention_queue.shift();
+                console.log("new queue", this.intention_queue)
             }
 
             // Postpone next iteration at setImmediate
@@ -39,15 +46,67 @@ class IntentionRevision {
         }
     }
 }
+// DA USARE COME SPUNTO PER FARE IntentionRevisionRevise
+
+// class IntentionRevisionReplace extends IntentionRevision {
+//     async push (predicate) {
+//         // Check if already queued
+        // const last = this.intention_queue.at( this.intention_queue.length - 1 );
+
+//         if ( last && last.predicate.join(' ') == predicate.join(' ') )
+//             return; // intention is already being achieved        
+
+//         console.log( 'IntentionRevisionReplace.push', predicate );
+//         const intention = new Intention( this, predicate );
+//         this.intention_queue.push( intention );
+
+//         if (last)
+//             last.stop();
+//     }
+// }
 
 class IntentionRevisionRevise extends IntentionRevision {
+    // TODO
+    // - order intentions based on utility function (reward - cost) (for example, parcel score minus distance)
+    // - eventually stop current one
+    // - evaluate validity of intention MOLTO IMPORTANTE (con myBeliefset, oppure qui oppure dentro IntentionRevision loop)
 
-    async push(predicate) {
-        console.log('Revising intention queue. Received', ...predicate);
-        // TODO
-        // - order intentions based on utility function (reward - cost) (for example, parcel score minus distance)
-        // - eventually stop current one
-        // - evaluate validity of intention
+    async push(intention) {
+        // intention = {instruction, x, y, gain}
+        let current = this.intention_queue.at(0);
+        let intention_predicate = [intention.instruction, intention.x, intention.y, intention.gain];
+        let is_already_queued = false;
+        // console.log("queue ",this.intention_queue, " received intention", intention)
+        for (const intent of this.intention_queue) {
+            // console.log("la queue", this.intention_queue)
+            if (Object.values(intent).join('') == Object.values(intention).join('')) {
+                intent.gain = intention.gain;
+                is_already_queued = true;
+            }
+        }
+
+        if (!is_already_queued)
+            this.intention_queue.push(intention_predicate);
+        // console.log("prima del sort", this.intention_queue)
+        if (this.intention_queue.length > 1) {
+            this.intention_queue.sort((a, b) => {
+                if (a.gain < b.gain) {
+                    return 1; // b should come before a
+                } else if (a.gain > b.gain) {
+                    return -1; // a should come before b
+                } else {
+                    return 0; // equal in reward so i don't care
+                }
+            });
+        }
+        // console.log("dopo il sort", this.intention_queue)
+        let new_best = this.intention_queue[0];
+        // console.log('new_best', new_best)
+        if (current && Object.values(current).join('') != Object.values(new_best).join('')) {
+            console.log("stoppo la current ", current)
+            current = new Intention(this, [current[0], current[1], current[2]]);
+            current.stop();
+        }
     }
 
 }
@@ -104,7 +163,7 @@ class Intention {
                     this.log('succesful intention', ...this.predicate, 'with plan', planClass.name, 'with result:', plan_res);
                     return plan_res
                 } catch (error) {
-                    this.log('failed intention', ...this.predicate, 'with plan', planClass.name, 'with error:', ...error);
+                    this.log('failed intention', ...this.predicate, 'with plan', planClass.name, 'with error:', error);
                 }
             }
         }
@@ -166,6 +225,65 @@ class GoPickUp extends Plan {
         return true;
     }
 }
+
+class GoDeliver extends Plan {
+    static isApplicableTo ( go_deliver ) {
+        return go_deliver == 'go_deliver';
+    }
+
+    async execute ( go_deliver ) {
+        let deliveryTile = nearestDelivery( me );
+
+        await this.subIntention( ['go_to', deliveryTile.x, deliveryTile.y] );
+        if ( this.stopped ) throw ['stopped']; // if stopped then quit
+
+        await client.putdown()
+        if ( this.stopped ) throw ['stopped']; // if stopped then quit
+
+        return true;
+    }
+}
+
+class DepthSearchMove extends Plan {
+    static isApplicableTo ( go_to, x, y ) {
+        return go_to == 'go_to';
+    }
+
+    async execute ( go_to, x, y ) {
+        const depth_search = depth_search_daemon(client);
+        this.log( 'DepthSearchMove', 'from',  me.x, me.y, 'to', {x, y} );
+        console.log("in DFS me ", me, "and x, y", x, y)
+        console.log("prima del while ", me.x != x && me.y != y)
+        while ( me.x != x || me.y != y ) {
+            console.log("sono entrao nel while")
+            const plan = depth_search(me, {x, y})
+            console.log("plan", plan)
+            client.socket.emit( "path", plan.map( step => step.current ) );
+
+            if ( plan.length == 0 ) {
+                throw 'target not reachable';
+            }
+    
+            for ( const step of plan ) {
+                if ( this.stopped ) throw ['stopped']; // if stopped then quit
+                
+                const status = await client.move( step.action )
+    
+                if ( status ) {
+                    me.x = status.x;
+                    me.y = status.y;
+                }
+                else {
+                    this.log( 'DepthSearchMove replanning', 'from',  me.x, me.y, 'to', {x, y} );
+                    break;
+                }
+            }
+        }
+        console.log("sono uscito dal while")
+        return true;
+    }
+}
+
 
 class BlindMove extends Plan {
     static isApplicableTo(go_to, x, y) {
@@ -241,5 +359,13 @@ class PddlMove extends Plan {
         pddlExecutor.exec(plan);
     }
 }
+
+const planLibrary = [];
+
+planLibrary.push(GoPickUp)
+planLibrary.push(GoDeliver)
+planLibrary.push(DepthSearchMove)
+// planLibrary.push(BlindMove)
+// planLibrary.push(PddlMove)
 
 export { IntentionRevision, IntentionRevisionRevise, Intention, Plan, GoPickUp, BlindMove, PddlMove };
