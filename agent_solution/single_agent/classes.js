@@ -6,6 +6,7 @@ class IntentionRevision {
     intention_queue = new Array();
     current_intention = null;
     current_triple = []
+    current_gain = 0;
 
     get intention_queue() {
         return this.intention_queue;
@@ -31,10 +32,11 @@ class IntentionRevision {
                 this.intention_queue = removeSublists(this.intention_queue);
                 
                 this.current_triple = [this.intention_queue[0][0], this.intention_queue[0][1], this.intention_queue[0][2]]
+                this.current_gain = this.intention_queue[0][3]
                 const intention = new Intention(this, this.current_triple);
                 
                 this.current_intention = intention;
-
+                console.log("iniziando la ", this.current_triple, "con gain", this.current_gain)
                 await this.current_intention.achieve().catch(error => {
                     console.log("Failed intention", error)
                 });
@@ -94,8 +96,13 @@ class IntentionRevisionRevise extends IntentionRevision {
             let current = this.current_triple;
             let new_best = this.intention_queue[0];
             if (current && !(current.slice(0, 3).every((value, index) => value === new_best.slice(0, 3)[index]))) {
-                console.log("stoppo la current ", current, " a favore di ", new_best)
-                this.current_intention.stop();
+                if (this.current_gain < new_best[3]) {
+                    console.log("stoppo la current ", current, " a favore di ", new_best)
+                    this.current_intention.stop();
+
+                    // from intention_queue filter away all the sublists where the first three elements match current
+                    this.intention_queue = this.intention_queue.filter(sublist => sublist[0] !== current[0] || sublist[1] !== current[1] || sublist[2] !== current[2]);
+                }
             }
         }
     }
