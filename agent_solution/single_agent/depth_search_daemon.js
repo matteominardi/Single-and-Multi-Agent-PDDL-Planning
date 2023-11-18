@@ -1,11 +1,5 @@
 import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
-import {me, map} from "./index.js";
-
-function distance( {x:x1, y:y1}, {x:x2, y:y2}) {
-    const dx = Math.abs( Math.round(x1) - Math.round(x2) )
-    const dy = Math.abs( Math.round(y1) - Math.round(y2) )
-    return dx + dy;
-}
+import {me, map, distance} from "./index.js";
 
 export default function ( /**@type {DeliverooApi}*/client ) {
     
@@ -78,7 +72,7 @@ export default function ( /**@type {DeliverooApi}*/client ) {
 
         search(0, init_x, init_y);
 
-        let dest = map.get(target_x).get(target_y);
+        let dest = map.get(Math.min(target_x, Math.max(...map.keys()))).get(target_y);
         
         const plan = [];
 

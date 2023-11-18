@@ -1,9 +1,11 @@
-import {me, client} from "./index.js";
+import {me, client, nearestDelivery} from "./index.js";
 import depth_search_daemon from "./depth_search_daemon.js";
 
 
 class IntentionRevision {
     intention_queue = new Array();
+    current_intention = null;
+    current_triple = []
 
     get intention_queue() {
         return this.intention_queue;
@@ -16,16 +18,6 @@ class IntentionRevision {
     async loop() {
         while (true) {
             if (this.intention_queue.length > 0) {
-                console.log('intentionRevision.loop', this.intention_queue);
-
-                // Current intention
-                const intention = new Intention(this, 
-                    [this.intention_queue[0][0], this.intention_queue[0][1], this.intention_queue[0][2]]);
-                console.log("intenion", intention)
-                // Start achieving intention
-                await intention.achieve().catch(error => {
-                    console.log( 'Failed intention', error)
-                });
                 console.log("intention_queue prima", this.intention_queue)
                 function removeSublists(list) {
                     return list.filter((sublist, index) => !list.some((other, otherIndex) =>
@@ -37,7 +29,21 @@ class IntentionRevision {
                     ));
                 }
                 this.intention_queue = removeSublists(this.intention_queue);
+                
+                this.current_triple = [this.intention_queue[0][0], this.intention_queue[0][1], this.intention_queue[0][2]]
+                const intention = new Intention(this, this.current_triple);
+                
+                this.current_intention = intention;
+
+                await this.current_intention.achieve().catch(error => {
+                    console.log("Failed intention", error)
+                });
+                
                 this.intention_queue.shift();
+
+                if (me.carrying == 0) 
+                    this.intention_queue = this.intention_queue.filter(sublist => sublist[0] !== 'go_deliver');
+                
                 console.log("new queue", this.intention_queue)
             }
 
@@ -46,66 +52,51 @@ class IntentionRevision {
         }
     }
 }
-// DA USARE COME SPUNTO PER FARE IntentionRevisionRevise
-
-// class IntentionRevisionReplace extends IntentionRevision {
-//     async push (predicate) {
-//         // Check if already queued
-        // const last = this.intention_queue.at( this.intention_queue.length - 1 );
-
-//         if ( last && last.predicate.join(' ') == predicate.join(' ') )
-//             return; // intention is already being achieved        
-
-//         console.log( 'IntentionRevisionReplace.push', predicate );
-//         const intention = new Intention( this, predicate );
-//         this.intention_queue.push( intention );
-
-//         if (last)
-//             last.stop();
-//     }
-// }
 
 class IntentionRevisionRevise extends IntentionRevision {
     // TODO
-    // - order intentions based on utility function (reward - cost) (for example, parcel score minus distance)
-    // - eventually stop current one
     // - evaluate validity of intention MOLTO IMPORTANTE (con myBeliefset, oppure qui oppure dentro IntentionRevision loop)
 
     async push(intention) {
+        if (me.x % 1 != 0 || me.y % 1 != 0) return;
+
         // intention = {instruction, x, y, gain}
-        let current = this.intention_queue.at(0);
         let intention_predicate = [intention.instruction, intention.x, intention.y, intention.gain];
         let is_already_queued = false;
-        // console.log("queue ",this.intention_queue, " received intention", intention)
-        for (const intent of this.intention_queue) {
-            // console.log("la queue", this.intention_queue)
-            if (Object.values(intent).join('') == Object.values(intention).join('')) {
-                intent.gain = intention.gain;
+        
+        for (let intent of this.intention_queue) {
+            if (intent.slice(0, 3).every((value, index) => value === intention_predicate.slice(0, 3)[index])) {
+                intent[3] = intention.gain;
                 is_already_queued = true;
             }
         }
-
+        
+        console.log("la queue", this.intention_queue)
+        
         if (!is_already_queued)
             this.intention_queue.push(intention_predicate);
-        // console.log("prima del sort", this.intention_queue)
-        if (this.intention_queue.length > 1) {
-            this.intention_queue.sort((a, b) => {
-                if (a.gain < b.gain) {
-                    return 1; // b should come before a
-                } else if (a.gain > b.gain) {
-                    return -1; // a should come before b
-                } else {
-                    return 0; // equal in reward so i don't care
+        
+        console.log("prima del sort", this.intention_queue)
+        
+        this.intention_queue = Array.from(
+            this.intention_queue.reduce((map, subArray) => {
+                const key = subArray.slice(0, 3).join('-');
+                if (subArray[3] > 0 && (!map.has(key) || subArray[3] > map.get(key)[3])) {
+                    map.set(key, subArray);
                 }
-            });
-        }
-        // console.log("dopo il sort", this.intention_queue)
-        let new_best = this.intention_queue[0];
-        // console.log('new_best', new_best)
-        if (current && Object.values(current).join('') != Object.values(new_best).join('')) {
-            console.log("stoppo la current ", current)
-            current = new Intention(this, [current[0], current[1], current[2]]);
-            current.stop();
+                return map;
+            }, new Map()).values()
+        ).sort((a, b) => b[3] - a[3]);
+        
+        console.log("dopo il sort", this.intention_queue)
+        
+        if (this.intention_queue.length > 0) {
+            let current = this.current_triple;
+            let new_best = this.intention_queue[0];
+            if (current && !(current.slice(0, 3).every((value, index) => value === new_best.slice(0, 3)[index]))) {
+                console.log("stoppo la current ", current, " a favore di ", new_best)
+                this.current_intention.stop();
+            }
         }
     }
 
@@ -219,9 +210,13 @@ class GoPickUp extends Plan {
         // if ( this.stopped ) throw ['stopped']; SECONDO ME FORSE NON SERVE
         await this.subIntention(['go_to', x, y]);
         if (this.stopped) throw ['stopped'];
-        await client.pickup()
+        let picked = await client.pickup();
+        
+        me.carrying += picked[0].reward;
+        me.carrying_size += 1;
+        
         if (this.stopped) throw ['stopped'];
-
+        
         return true;
     }
 }
@@ -239,7 +234,8 @@ class GoDeliver extends Plan {
 
         await client.putdown()
         if ( this.stopped ) throw ['stopped']; // if stopped then quit
-
+        me.carrying = 0;
+        me.carrying_size = 0;
         return true;
     }
 }
@@ -252,10 +248,7 @@ class DepthSearchMove extends Plan {
     async execute ( go_to, x, y ) {
         const depth_search = depth_search_daemon(client);
         this.log( 'DepthSearchMove', 'from',  me.x, me.y, 'to', {x, y} );
-        console.log("in DFS me ", me, "and x, y", x, y)
-        console.log("prima del while ", me.x != x && me.y != y)
         while ( me.x != x || me.y != y ) {
-            console.log("sono entrao nel while")
             const plan = depth_search(me, {x, y})
             console.log("plan", plan)
             client.socket.emit( "path", plan.map( step => step.current ) );
@@ -279,7 +272,6 @@ class DepthSearchMove extends Plan {
                 }
             }
         }
-        console.log("sono uscito dal while")
         return true;
     }
 }
@@ -364,8 +356,8 @@ const planLibrary = [];
 
 planLibrary.push(GoPickUp)
 planLibrary.push(GoDeliver)
-planLibrary.push(DepthSearchMove)
-// planLibrary.push(BlindMove)
+// planLibrary.push(DepthSearchMove)
+planLibrary.push(BlindMove)
 // planLibrary.push(PddlMove)
 
 export { IntentionRevision, IntentionRevisionRevise, Intention, Plan, GoPickUp, BlindMove, PddlMove };

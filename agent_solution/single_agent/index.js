@@ -8,13 +8,12 @@ const client = new DeliverooApi(
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjcxZjY0NjU0NjE3IiwibmFtZSI6Im1hdHRlbyIsImlhdCI6MTY5ODc0NzUzNH0.V9bT6YrrS37wODxh1mP34Ezu6eXNdfEMnaGmjfzxyaI"
 )
 
-const me = {carrying : 0};
+const me = {carrying : 0, carrying_size: 0};
 const myBeliefset = new Beliefset();
 const db_parcels = new Map()
 const db_agents = new Map()
 
 function distance_manhattan({ x: x1, y: y1 }, { x: x2, y: y2 }) {
-    console.log(x1, y1, x2, y2);
     const dx = Math.abs(Math.round(x1) - Math.round(x2))
     const dy = Math.abs(Math.round(y1) - Math.round(y2))
     return dx + dy;
@@ -26,7 +25,7 @@ function distance_depth_search( {x:x1, y:y1}, {x:x2, y:y2} ) {
 }
 
 function distance({x:x1, y:y1}, {x:x2, y:y2}) {
-    return distance_depth_search({x:x1, y:y1}, {x:x2, y:y2});
+    return distance_manhattan({x:x1, y:y1}, {x:x2, y:y2});
 }
 
 const map = new Map()
@@ -42,31 +41,36 @@ client.onNotTile( ( x, y ) => {
 } );
 
 function nearestDelivery({x, y}) {
-    return Array.from(map.entries())
-            .flatMap(([x, innerMap]) => Array.from(innerMap.entries()).filter(([, value]) => value.delivery === true))
-            .sort( (a,b) => distance(a,{x, y})-distance(b,{x, y}) )[0]
+    let deliveryCells = [];
+    map.forEach((heightMap) => {
+        heightMap.forEach((cell) => {
+            if (cell.delivery) {
+                deliveryCells.push(cell);
+            }
+        });
+    });
+
+    deliveryCells.sort((a, b) => {
+        return distance({x, y}, {x: a.x, y: a.y}) - distance({x, y}, {x: b.x, y: b.y});
+    });
+    
+    return deliveryCells[0]
 }
 
-var AGENTS_OBSERVATION_DISTANCE;
 var  MOVEMENT_DURATION;
 var PARCEL_DECADING_INTERVAL;
 client.onConfig( (config) => {
-    AGENTS_OBSERVATION_DISTANCE = config.AGENTS_OBSERVATION_DISTANCE;
     MOVEMENT_DURATION = config.MOVEMENT_DURATION;
     PARCEL_DECADING_INTERVAL = config.PARCEL_DECADING_INTERVAL == '1s' ? 1000 : 1000000;
 } );
 
 client.onYou(async ( {id, name, x, y, score} ) => {
     if (x % 1 != 0 || y % 1 != 0) return;
-    // console.log("You", {id, name, x, y, score});
-    // console.log(db_parcels)
-    // console.log(myBeliefset)
     me.id = id;
     me.name = name;
     me.x = x;
     me.y = y;
     me.score = score;
-    // console.log("me", me)
 });
 
 client.onMap((w, h, tiles) => {
@@ -94,6 +98,8 @@ client.onMap((w, h, tiles) => {
 });
 
 client.onParcelsSensing((parcels) => {
+    if (me.x % 1 != 0 || me.y % 1 != 0) return;
+
     // p = { id:string, x:number, y:number, carriedBy:string, reward:number }
     for (const p of parcels) { 
         
@@ -125,25 +131,25 @@ client.onParcelsSensing((parcels) => {
     }
 
     let options = [];
-    let nearest_delivery = nearestDelivery(me);
-    // let carriedReward = Array.from( me.carrying.values() ).reduce( (acc, parcel) => acc + parcel.reward, 0 )
-
+    
     for (const [id, parcel] of db_parcels.entries()) {
         if (!parcel.carriedBy) {
+            let nearest_delivery = nearestDelivery({x: parcel.x, y: parcel.y});
             options.push({
                 instruction: "go_pick_up", 
                 x: parcel.x, 
                 y: parcel.y, 
-                gain: parcel.gain
+                gain: me.carrying + parcel.reward - (me.carrying_size + 1) * PARCEL_DECADING_INTERVAL/MOVEMENT_DURATION * (distance({x: me.x, y: me.y}, {x: parcel.x, y: parcel.y}) + distance({x: parcel.x, y: parcel.y}, {x: nearest_delivery.x, y: nearest_delivery.y}))
             })
         }
     }
     if (me.carrying > 0) {
+        let nearest_delivery = nearestDelivery(me);
         options.push({
             instruction: "go_deliver", 
             x: nearest_delivery.x,
             y: nearest_delivery.y,
-            gain: me.carrying - distance({x: me.x, y: me.y}, {x: nearest_delivery.x, y: nearest_delivery.y})
+            gain: me.carrying - me.carrying_size * PARCEL_DECADING_INTERVAL/MOVEMENT_DURATION * distance({x: me.x, y: me.y}, {x: nearest_delivery.x, y: nearest_delivery.y})
         })
     }
 
@@ -153,6 +159,8 @@ client.onParcelsSensing((parcels) => {
 })
 
 client.onAgentsSensing((agents) => {
+    if (me.x % 1 != 0 || me.y % 1 != 0) return;
+    
     // a = { id:string, name:string, x:number, y:number, score:number }
     for (const a of agents) {
         if (a.x % 1 != 0 || a.y % 1 != 0) continue; 
@@ -192,4 +200,4 @@ client.onAgentsSensing((agents) => {
 const myAgent = new IntentionRevisionRevise();
 myAgent.loop();
 
-export { me, client, map };
+export { me, client, map, distance , nearestDelivery};
