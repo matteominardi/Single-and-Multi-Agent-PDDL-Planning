@@ -107,7 +107,8 @@ function updateAgents(agents) {
 }
 
 function initMap(width, height, tiles) {
-    BeliefSet.initMap(width, height, tiles)
+    BeliefSet.initMap(width, height, tiles);
+    console.log("Map initialized!");
     // for (let tile of tiles) {
     //         myBeliefset.declare("tile " + tile.x + "_" + tile.y);
     //         myBeliefset.declare("available " + tile.x + "_" + tile.y);
@@ -132,7 +133,9 @@ function initMap(width, height, tiles) {
 }
 
 function updateMe(me) {
-    return
+    BeliefSet.updateMe(me.id, me.name, me.x, me.y, me.score);
+    console.log(BeliefSet.getMe());
 }
 
-export { updateParcels, updateAgents, initMap, updateMe };
+export { initMap, updateAgents, updateMe, updateParcels };
+

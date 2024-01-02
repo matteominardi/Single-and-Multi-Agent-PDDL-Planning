@@ -2,6 +2,8 @@
 const TileType = {
     NORMAL: 0,
     DELIVERY: 1,
+    EMPTY: 2,
+    OBSTACLE: 3
 }
 
 class Tile {
@@ -9,26 +11,27 @@ class Tile {
      * x position of the tile
      * @param {number} x
      */
-    x
+    x;
     /**
      * y position of the tile
      * @param {number} y
      */
-    y
+    y;
     /**
      * type of the tile
      * @param {TileType} type
      */
-    type
+    type;
     /**
      * @param {number} x
      * @param {number} y
      * @param {boolean} delivery
      */
-    constructor(x, y, delivery) {
+    constructor(x, y, delivery, parcelSpawner) {
+
         this.x = x
         this.y = y
-        this.type = delivery ? TileType.DELIVERY : TileType.NORMAL
+        this.type = delivery ? TileType.DELIVERY : (parcelSpawner ? TileType.NORMAL : TileType.EMPTY)
     }
 
 }
@@ -73,21 +76,8 @@ class TileMap {
             this.tiles[i] = new Array(height)
         }
         tiles.forEach(tile => {
-            this.tiles[tile.x][tile.y] = new Tile(tile.x, tile.y, tile.delivery)
+            this.tiles[tile.x][tile.y] = new Tile(tile.x, tile.y, tile.delivery, tile.parcelSpawner)
         })
-        // for (let i = 0; i < width; i++) {
-        //     for (let j = 0; j < height; j++) {
-        //         if (!this.tiles[i][j]) {
-        //             process.stdout.write('.')
-        //         } else if (this.tiles[i][j].type === TileType.NORMAL) {
-        //             process.stdout.write('N')
-        //         } else {
-        //             process.stdout.write('D')
-        //         }
-        //
-        //     }
-        //     console.log()
-        // }
     }
 }
 

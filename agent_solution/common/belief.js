@@ -1,13 +1,16 @@
 import { Agents } from "./agent.js";
 import { Parcels } from "./parcel.js";
 import { TileMap } from "./world.js";
+import Me from "./me.js";
 
 /**
  * Represents all the information the agent has about the world
+ * @date 1/2/2024 - 3:34:40 PM
+ *
  * @class BeliefSet
+ * @typedef {BeliefSet}
  */
 class BeliefSet {
-    
     /**
      * Represents perceived parcels
      * @date 1/2/2024 - 3:15:56 PM
@@ -16,7 +19,7 @@ class BeliefSet {
      * @type {Parcels}
      */
     static perceivedParcels = new Parcels();
-    
+
     /**
      * Represents perceived agents
      * @date 1/2/2024 - 3:16:22 PM
@@ -26,7 +29,6 @@ class BeliefSet {
      */
     static perceivedAgents = new Agents();
 
-    
     /**
      * Represents the server map
      * @date 1/2/2024 - 3:16:38 PM
@@ -34,9 +36,8 @@ class BeliefSet {
      * @static
      * @type {TileMap | null}
      */
-    static map = null
+    static map = null;
 
-    
     /**
      * Represents the agent itself
      * @date 1/2/2024 - 3:17:27 PM
@@ -46,7 +47,6 @@ class BeliefSet {
      */
     static me = new Me();
 
-    
     /**
      * Get perceived parcels
      * @date 1/2/2024 - 3:17:57 PM
@@ -58,7 +58,6 @@ class BeliefSet {
         return this.perceivedParcels;
     }
 
-    
     /**
      * Update perceived parcels
      * @date 1/2/2024 - 3:18:16 PM
@@ -67,20 +66,18 @@ class BeliefSet {
      * @param {*} parcels
      */
     static updateParcels(parcels) {
-        for (let p in parcels){
+        for (let p in parcels) {
             // check if id already present
-            if (this.perceivedParcels.getParcel(parcels[p].id) !== null){
+            if (this.perceivedParcels.getParcel(parcels[p].id) !== null) {
                 // update parcel
-                this.perceivedParcels.updateParcel(parcels[p])
+                this.perceivedParcels.updateParcel(parcels[p]);
             } else {
                 // add parcel
-                this.perceivedParcels.add(parcels[p])
+                this.perceivedParcels.addParcel(parcels[p]);
             }
         }
-        console.log(this.perceivedParcels)
     }
 
-    
     /**
      * Get perceived agents
      * @date 1/2/2024 - 3:19:02 PM
@@ -88,8 +85,8 @@ class BeliefSet {
      * @static
      * @returns {Agents}
      */
-    static getAgents(){
-        return this.perceivedAgents
+    static getAgents() {
+        return this.perceivedAgents;
     }
 
     /**
@@ -100,20 +97,18 @@ class BeliefSet {
      * @param {*} agents
      */
     static updateAgents(agents) {
-        for (let a in agents){
+        for (let a in agents) {
             // check if id already present
-            if (this.perceivedAgents.getParcel(parcels[p].id) !== null){
+            if (this.perceivedAgents.getAgent(agents[a].id) !== null) {
                 // update parcel
-                this.perceivedParcels.updateParcel(parcels[p])
+                this.perceivedAgents.updateAgent(agents[a]);
             } else {
                 // add parcel
-                this.perceivedParcels.add(parcels[p])
+                this.perceivedAgents.addAgent(agents[a]);
             }
         }
-        console.log(this.perceivedParcels)
     }
 
-    
     /**
      * Get the server map
      * @date 1/2/2024 - 3:19:46 PM
@@ -125,7 +120,6 @@ class BeliefSet {
         return this.map;
     }
 
-    
     /**
      * Init map with width, height and tiles
      * @date 1/2/2024 - 3:20:07 PM
@@ -149,7 +143,22 @@ class BeliefSet {
      * @param {boolean} delivery
      */
     static updateMap(x, y, delivery) {
-        return
+        return;
+    }
+
+    /**
+     * Get the agent itself
+     * @date 1/2/2024 - 3:46:13 PM
+     *
+     * @static
+     * @returns {Me}
+     */
+    static getMe() {
+        return this.me;
+    }
+
+    static updateMe(id, name, x, y, score) {
+        this.me.update(id, name, x, y, score);
     }
 }
 
