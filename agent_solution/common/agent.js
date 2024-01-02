@@ -96,7 +96,13 @@ class Agents extends Set {
         if (agent instanceof Agent) {
             this.add(agent);
         } else {
-            let newAgent = new Agent(agent.id, agent.name, agent.x, agent.y, agent.score);
+            let newAgent = new Agent(
+                agent.id,
+                agent.name,
+                agent.x,
+                agent.y,
+                agent.score
+            );
             this.add(newAgent);
         }
     }

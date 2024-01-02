@@ -160,6 +160,15 @@ class BeliefSet {
     static updateMe(id, name, x, y, score) {
         this.me.update(id, name, x, y, score);
     }
+
+    static getBeliefs() {
+        return {
+            parcels: this.perceivedParcels,
+            agents: this.perceivedAgents,
+            map: this.map,
+            me: this.me,
+        };
+    }
 }
 
 export default BeliefSet;

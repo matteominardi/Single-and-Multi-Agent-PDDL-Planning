@@ -138,4 +138,3 @@ function updateMe(me) {
 }
 
 export { initMap, updateAgents, updateMe, updateParcels };
-
