@@ -41,7 +41,7 @@ class Grid extends Observable {
         // for (let x = 0; x < 10; x++) {
         //     let column = [];
         //     for (var y = 0; y < 10; y++) {
-        //         column.push(new Tile(this, x, y))
+        //         column.push(new World(this, x, y))
         //     }
         //     this.#tiles.push(column);
         // }
@@ -187,7 +187,7 @@ class Grid extends Observable {
         if ( !tile || tile.blocked )
             return false;
         
-        // Instantiate and add to Tile
+        // Instantiate and add to World
         var parcel = new Parcel( x, y );
         // tile.addParcel( parcel );
         this.#parcels.set( parcel.id, parcel )
