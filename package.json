@@ -22,6 +22,10 @@
     "@datastructures-js/priority-queue": "^6.3.0",
     "@unitn-asa/deliveroo-js-client": "^0.0.34",
     "@unitn-asa/pddl-client": "^0.0.34",
+    "dotenv": "^16.3.1",
     "fastpriorityqueue": "^0.7.4"
+  },
+  "devDependencies": {
+    "prettier": "^3.1.1"
   }
 }
