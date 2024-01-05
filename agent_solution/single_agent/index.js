@@ -16,46 +16,46 @@ const db_agents = new Map();
 const map = new Map();
 
 function distance_manhattan({ x: x1, y: y1 }, { x: x2, y: y2 }) {
-  const dx = Math.abs(Math.round(x1) - Math.round(x2));
-  const dy = Math.abs(Math.round(y1) - Math.round(y2));
-  return dx + dy;
+    const dx = Math.abs(Math.round(x1) - Math.round(x2));
+    const dy = Math.abs(Math.round(y1) - Math.round(y2));
+    return dx + dy;
 }
 
 const depth_search = depth_search_daemon(client);
 function distance_depth_search({ x: x1, y: y1 }, { x: x2, y: y2 }) {
-  return depth_search({ x: x1, y: y1 }, { x: x2, y: y2 }).length;
+    return depth_search({ x: x1, y: y1 }, { x: x2, y: y2 }).length;
 }
 
 function distance({ x: x1, y: y1 }, { x: x2, y: y2 }) {
-  return distance_manhattan({ x: x1, y: y1 }, { x: x2, y: y2 });
+    return distance_manhattan({ x: x1, y: y1 }, { x: x2, y: y2 });
 }
 
 function nearestDelivery({ x, y }) {
-  let deliveryCells = [];
-  map.forEach((heightMap) => {
-    heightMap.forEach((cell) => {
-      if (cell.delivery) {
-        deliveryCells.push(cell);
-      }
+    let deliveryCells = [];
+    map.forEach((heightMap) => {
+        heightMap.forEach((cell) => {
+            if (cell.delivery) {
+                deliveryCells.push(cell);
+            }
+        });
     });
-  });
 
-  deliveryCells.sort((a, b) => {
-    return (
-      distance({ x, y }, { x: a.x, y: a.y }) -
-      distance({ x, y }, { x: b.x, y: b.y })
-    );
-  });
+    deliveryCells.sort((a, b) => {
+        return (
+            distance({ x, y }, { x: a.x, y: a.y }) -
+            distance({ x, y }, { x: b.x, y: b.y })
+        );
+    });
 
-  return deliveryCells[0];
+    return deliveryCells[0];
 }
 
 var MOVEMENT_DURATION;
 var PARCEL_DECADING_INTERVAL;
 client.onConfig((config) => {
-  MOVEMENT_DURATION = config.MOVEMENT_DURATION;
-  PARCEL_DECADING_INTERVAL =
-    config.PARCEL_DECADING_INTERVAL == "1s" ? 1000 : 1000000;
+    MOVEMENT_DURATION = config.MOVEMENT_DURATION;
+    PARCEL_DECADING_INTERVAL =
+        config.PARCEL_DECADING_INTERVAL == "1s" ? 1000 : 1000000;
 });
 
 client.onMap((w, h, tiles) => initMap(w, h, tiles));
