@@ -1,5 +1,4 @@
-import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
-import { me, map, distance } from "./index.js";
+import { distance, map } from "./index.js";
 
 export default function (/**@type {DeliverooApi}*/ client) {
     var AGENTS_OBSERVATION_DISTANCE;

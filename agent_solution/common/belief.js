@@ -7,7 +7,7 @@ class BeliefSet {
     static perceivedParcels = new Parcels();
     static perceivedAgents = new Agents();
     static map = null;
-    static me = null;
+    static me = new Me();
 
     static getParcels() {
         return this.perceivedParcels;
@@ -56,7 +56,7 @@ class BeliefSet {
     }
 
     static getMe() {
-        return new Me(Me.id, Me.name, Me.last_x, Me.last_y, Me.score);
+        return this.me;
     }
 
     static updateMe(me) {

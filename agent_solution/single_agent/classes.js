@@ -1,4 +1,4 @@
-import { me, client, nearestDelivery } from "./index.js";
+import { client, me, nearestDelivery } from "./index.js";
 import depth_search_daemon from "./depth_search_daemon.js";
 
 class IntentionRevision {

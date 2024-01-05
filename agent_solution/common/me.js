@@ -16,9 +16,7 @@ class Me {
     last_y;
     score;
 
-    constructor(client) {
-        this.client = client;
-    }
+    constructor() {}
 
     update(me) {
         this.id = me.id;
@@ -48,7 +46,7 @@ class Me {
         return;
     }
 
-    do_action(action) {
+    do_action(client, action) {
         console.log("Performing action: " + action);
         if (
             action === Actions.UP ||
@@ -56,7 +54,7 @@ class Me {
             action === Actions.LEFT ||
             action === Actions.RIGHT
         ) {
-            this.client.move(action).then((res) => {
+            client.move(action).then((res) => {
                 if (this.hasMoved()) {
                     console.log("Move successful");
                 } else {
@@ -64,11 +62,11 @@ class Me {
                 }
             });
         } else if (action === Actions.PICKUP) {
-            this.client.pickup().then((res) => {
+            client.pickup().then((res) => {
                 console.log("Pickup successful");
             });
         } else if (action === Actions.PUTDOWN) {
-            this.client.putdown().then((res) => {
+            client.putdown().then((res) => {
                 console.log("Putdown successful");
             });
         }
