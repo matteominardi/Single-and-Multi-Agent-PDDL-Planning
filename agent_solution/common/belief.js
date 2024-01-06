@@ -1,7 +1,8 @@
 import { Agents } from "./agent.js";
 import { Parcels } from "./parcel.js";
-import { TileMap } from "./world.js";
+import { Tile, TileMap } from "./world.js";
 import Me from "./me.js";
+import { distanceBetween } from "./helpers.js";
 
 class BeliefSet {
     static perceivedParcels = new Parcels();
@@ -24,6 +25,18 @@ class BeliefSet {
                 this.perceivedParcels.addParcel(parcels[p]);
             }
         }
+    }
+
+    static setCarriedByMe(parcelId) {
+        this.getParcels().setCarriedBy(parcelId, this.getMe().id);
+    }
+
+    static emptyCarriedByMe() {
+        this.getParcels().emptyCarriedBy(this.getMe().id);
+    }
+
+    static getCarriedByMe() {
+        return this.getParcels().getCarriedBy(this.getMe().id);
     }
 
     static getAgents() {
@@ -61,6 +74,36 @@ class BeliefSet {
 
     static updateMe(me) {
         BeliefSet.me.update(me);
+    }
+
+    static getClosestParcel(tile) {
+        let closestParcel = null;
+        let closestDistance = Infinity;
+        this.perceivedParcels.forEach((parcel) => {
+            if (parcel.carriedBy === null) {
+                const parcelTile = this.getMap().getTile(parcel.x, parcel.y);
+                let distance = distanceBetween(tile, parcelTile);
+                if (distance < closestDistance) {
+                    closestParcel = parcelTile;
+                    closestDistance = distance;
+                }
+            }
+        });
+        return closestParcel;
+    }
+
+    static getClosestDeliverySpot(tile) {
+        let closestDeliverySpot = null;
+        let closestDistance = Infinity;
+        let deliverySpots = this.map.getDeliverySpots();
+        for (let d in deliverySpots) {
+            let distance = distanceBetween(tile, deliverySpots[d]);
+            if (distance < closestDistance) {
+                closestDeliverySpot = deliverySpots[d];
+                closestDistance = distance;
+            }
+        }
+        return closestDeliverySpot;
     }
 
     static getBeliefs() {

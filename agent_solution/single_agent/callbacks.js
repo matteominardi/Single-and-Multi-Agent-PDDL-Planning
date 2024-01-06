@@ -1,8 +1,9 @@
 import BeliefSet from "../common/belief.js";
+import { getPath } from "../common/helpers.js";
 
 function updateParcels(parcels) {
     BeliefSet.updateParcels(parcels);
-    console.log(BeliefSet.getParcels());
+    // console.log(BeliefSet.getParcels());
 
     // if (me.x % 1 != 0 || me.y % 1 != 0) return;
     //
@@ -66,7 +67,7 @@ function updateParcels(parcels) {
 
 function updateAgents(agents) {
     BeliefSet.updateAgents(agents);
-    console.log(BeliefSet.getAgents());
+    // console.log(BeliefSet.getAgents());
 
     // if (me.x % 1 != 0 || me.y % 1 != 0) return;
     //
@@ -134,7 +135,7 @@ function initMap(width, height, tiles) {
 
 function updateMe(me) {
     BeliefSet.updateMe(me);
-    console.log(BeliefSet.getMe());
+    // console.log(BeliefSet.getMe());
 }
 
 export { initMap, updateAgents, updateMe, updateParcels };

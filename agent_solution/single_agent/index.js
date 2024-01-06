@@ -1,6 +1,9 @@
 import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
 import { initMap, updateAgents, updateMe, updateParcels } from "./callbacks.js";
 import dotenv from "dotenv";
+import { computeActions, getPath, sleep } from "../common/helpers.js";
+import BeliefSet from "../common/belief.js";
+import Me, { Actions } from "../common/me.js";
 
 dotenv.config();
 
@@ -59,5 +62,45 @@ client.onMap((w, h, tiles) => initMap(w, h, tiles));
 client.onParcelsSensing((parcels) => updateParcels(parcels));
 client.onAgentsSensing((agents) => updateAgents(agents));
 client.onYou((me) => updateMe(me));
+
+setTimeout(async () => {
+    while (true) {
+        const start = BeliefSet.getMe().getMyPosition();
+        const parcel = BeliefSet.getClosestParcel(start);
+        const delivery = BeliefSet.getClosestDeliverySpot(start);
+        console.log(parcel, BeliefSet.getCarriedByMe().length === 0);
+        if (
+            (parcel === null || BeliefSet.getMap().isDeliverySpot(parcel)) &&
+            BeliefSet.getCarriedByMe().length === 0
+        ) {
+            console.log("quit");
+            // TODO: check with the agent wants to move one block away when reaching the delivery spot
+            break; // molto brutto ma proof of concept
+        } else if (parcel === null) {
+            console.log("delivery", delivery.x, delivery.y);
+            Me.requested_x = delivery.x;
+            Me.requested_y = delivery.y;
+        } else {
+            Me.requested_x = parcel.x;
+            Me.requested_y = parcel.y;
+        }
+        const path = getPath(start);
+        if (path.status === "success") {
+            const actions = computeActions(path.path);
+            for (let a in actions) {
+                await BeliefSet.me.do_action(client, actions[a]);
+                await sleep(1000);
+            }
+        }
+        if (parcel !== null) {
+            await BeliefSet.me.do_action(client, Actions.PICKUP);
+            BeliefSet.setCarriedByMe(parcel);
+        } else {
+            await BeliefSet.me.do_action(client, Actions.PUT_DOWN);
+            BeliefSet.emptyCarriedByMe();
+        }
+        await sleep(100);
+    }
+}, 3000);
 
 export { client };

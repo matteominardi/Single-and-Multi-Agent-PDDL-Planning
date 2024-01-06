@@ -1,3 +1,6 @@
+import BeliefSet from "./belief.js";
+import { sleep } from "./helpers.js";
+
 const Actions = {
     UP: "up",
     DOWN: "down",
@@ -15,6 +18,8 @@ class Me {
     previous_y;
     last_y;
     score;
+    static requested_x;
+    static requested_y;
 
     constructor() {}
 
@@ -33,7 +38,8 @@ class Me {
         this.score = me.score;
     }
 
-    hasMoved() {
+    async hasMoved() {
+        await sleep(500);
         let check =
             this.previous_x !== this.last_x || this.previous_y !== this.last_y;
         this.previous_x = this.last_x;
@@ -41,9 +47,8 @@ class Me {
         return check;
     }
 
-    toPddl() {
-        // TODO: implement this to use online planner
-        return;
+    getMyPosition() {
+        return BeliefSet.getMap().getTile(this.last_x, this.last_y);
     }
 
     do_action(client, action) {
@@ -54,19 +59,19 @@ class Me {
             action === Actions.LEFT ||
             action === Actions.RIGHT
         ) {
-            client.move(action).then((res) => {
-                if (this.hasMoved()) {
+            client.move(action).then(async (res) => {
+                if (await this.hasMoved()) {
                     console.log("Move successful");
                 } else {
-                    console.error("Move failed");
+                    this.do_action(client, action);
                 }
             });
         } else if (action === Actions.PICKUP) {
-            client.pickup().then((res) => {
+            client.pickup().then(async (res) => {
                 console.log("Pickup successful");
             });
-        } else if (action === Actions.PUTDOWN) {
-            client.putdown().then((res) => {
+        } else if (action === Actions.PUT_DOWN) {
+            client.putdown().then(async (res) => {
                 console.log("Putdown successful");
             });
         }

@@ -54,6 +54,33 @@ class Parcels extends Set {
             }
         }
     }
+
+    setCarriedBy(id, carriedBy) {
+        for (let p of this) {
+            if (p.id === id) {
+                p.carriedBy = carriedBy;
+                return;
+            }
+        }
+    }
+
+    getCarriedBy(id) {
+        let parcels = [];
+        for (let p of this) {
+            if (p.carriedBy === id) {
+                parcels.push(p);
+            }
+        }
+        return parcels;
+    }
+
+    emptyCarriedBy(id) {
+        for (let p of this) {
+            if (p.carriedBy === id) {
+                p.carriedBy = null;
+            }
+        }
+    }
 }
 
 export { Parcel, Parcels };
