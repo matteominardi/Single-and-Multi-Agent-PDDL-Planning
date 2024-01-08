@@ -4,6 +4,7 @@ class Parcel {
     y;
     carriedBy;
     reward;
+    gain;
 
     constructor(id, x, y, carriedBy, reward) {
         this.id = id;
@@ -11,6 +12,7 @@ class Parcel {
         this.y = y;
         this.carriedBy = carriedBy;
         this.reward = reward;
+        this.gain = reward;
     }
 }
 
@@ -81,6 +83,17 @@ class Parcels extends Set {
             }
         }
     }
+
+    getRewardBy(id) {
+        let reward = 0;
+        for (let p of this) {
+            if (p.carriedBy === id) {
+                reward += p.reward;
+            }
+        }
+        return reward;
+    }
+
 }
 
 export { Parcel, Parcels };

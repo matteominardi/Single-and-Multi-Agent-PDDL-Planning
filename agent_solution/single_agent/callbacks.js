@@ -138,4 +138,9 @@ function updateMe(me) {
     // console.log(BeliefSet.getMe());
 }
 
-export { initMap, updateAgents, updateMe, updateParcels };
+function updateConfig(config) {
+    BeliefSet.updateConfig(config);
+    // console.log(BeliefSet.getConfig());
+}
+
+export { initMap, updateAgents, updateMe, updateParcels, updateConfig };

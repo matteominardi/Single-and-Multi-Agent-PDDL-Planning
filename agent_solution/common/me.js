@@ -63,6 +63,7 @@ class Me {
                 if (await this.hasMoved()) {
                     console.log("Move successful");
                 } else {
+                    // TODO: remove this
                     this.do_action(client, action);
                 }
             });

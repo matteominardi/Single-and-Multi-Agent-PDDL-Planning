@@ -1,5 +1,4 @@
 import aStar from "a-star";
-import { Tile } from "./world.js";
 import BeliefSet from "./belief.js";
 import Me, { Actions } from "./me.js";
 

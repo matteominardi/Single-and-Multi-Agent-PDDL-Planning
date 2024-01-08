@@ -12,6 +12,7 @@ class Tile {
     x;
     y;
     type;
+    gain;
 
     constructor(x, y, delivery, parcelSpawner) {
         this.x = x;
@@ -20,7 +21,8 @@ class Tile {
             ? TileType.DELIVERY
             : parcelSpawner
               ? TileType.NORMAL
-              : TileType.EMPTY;
+                : TileType.EMPTY;
+        this.gain = 0;
     }
 
     equals(tile) {
