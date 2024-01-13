@@ -1,4 +1,4 @@
-import { distance, map } from "./index.js";
+import { distance, map } from "./index_old.js";
 
 export default function (/**@type {DeliverooApi}*/ client) {
     var AGENTS_OBSERVATION_DISTANCE;

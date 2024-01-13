@@ -10,7 +10,7 @@ University of Trento - 2022/2023
 
 ### v1.5 (27/03/2023)
 
-`$ node index.js level_1`
+`$ node index_old.js level_1`
 
 - config.js
 - /levels
