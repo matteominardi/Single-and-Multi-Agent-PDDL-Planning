@@ -3,6 +3,7 @@ import { distanceBetween } from "./helpers.js";
 import Me from "./me.js";
 import { Parcels } from "./parcel.js";
 import { TileMap } from "./world.js";
+import Config from "./config.js";
 
 class BeliefSet {
     static perceivedParcels = new Parcels();
@@ -27,10 +28,19 @@ class BeliefSet {
         }
     }
 
+    static removeParcel(parcelId) {
+        this.perceivedParcels.deleteParcel(parcelId);
+    }
+
     static updateConfig(config) {
         Config.MOVEMENT_DURATION = config.MOVEMENT_DURATION;
-        Config.PARCEL_DECADING_INTERVAL =
-            config.PARCEL_DECADING_INTERVAL == "1s" ? 1000 : 1000000;
+        if (config.PARCEL_DECADING_INTERVAL === "infinite") {
+            Config.PARCEL_DECADING_INTERVAL = 1;
+        } else {
+            Config.PARCEL_DECADING_INTERVAL = parseInt(
+                config.PARCEL_DECADING_INTERVAL.slice(0, -1),
+            );
+        }
     }
 
     static setCarriedByMe(parcelId) {
@@ -119,9 +129,13 @@ class BeliefSet {
         let closestDistance = Infinity;
         let deliverySpots = this.map.getDeliverySpots();
         for (let d in deliverySpots) {
-            let distance = distanceBetween(tile, deliverySpots[d]);
+            const deliveryTile = this.getMap().getTile(
+                deliverySpots[d].x,
+                deliverySpots[d].y,
+            );
+            let distance = distanceBetween(tile, deliveryTile);
             if (distance < closestDistance) {
-                closestDeliverySpot = deliverySpots[d];
+                closestDeliverySpot = deliveryTile;
                 closestDistance = distance;
             }
         }

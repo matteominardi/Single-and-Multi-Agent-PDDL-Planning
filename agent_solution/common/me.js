@@ -1,5 +1,5 @@
 import BeliefSet from "./belief.js";
-import { sleep, getPath } from "./helpers.js";
+import { getPath, sleep } from "./helpers.js";
 
 const Actions = {
     UP: "up",
@@ -39,7 +39,7 @@ class Me {
     }
 
     async hasMoved() {
-        await sleep(500);
+        await sleep(200);
         let check =
             this.previous_x !== this.last_x || this.previous_y !== this.last_y;
         this.previous_x = this.last_x;
@@ -52,18 +52,15 @@ class Me {
     }
 
     async do_action(client, action) {
-        console.log("Performing action: " + action);
         if (
             action === Actions.UP ||
             action === Actions.DOWN ||
             action === Actions.LEFT ||
             action === Actions.RIGHT
         ) {
-            await client.move(action)
-            if (await this.hasMoved()) {
-                console.log("Move successful");
-            } else {
-                throw "Move failed"
+            await client.move(action);
+            if (!(await this.hasMoved())) {
+                throw "Move failed";
             }
         } else if (action === Actions.PICKUP) {
             await client.pickup();
@@ -78,8 +75,9 @@ class Me {
 
     static pathTo(tile) {
         let current = BeliefSet.getMe().getMyPosition();
-        let path = getPath(current, tile);
-        return path;
+        Me.requested_x = tile.x;
+        Me.requested_y = tile.y;
+        return getPath(current);
     }
 }
 

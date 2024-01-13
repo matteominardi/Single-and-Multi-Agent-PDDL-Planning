@@ -21,7 +21,7 @@ class Tile {
             ? TileType.DELIVERY
             : parcelSpawner
               ? TileType.NORMAL
-                : TileType.EMPTY;
+              : TileType.EMPTY;
         this.gain = 0;
     }
 

@@ -10,14 +10,18 @@ import {
     updateMe,
     updateParcels,
 } from "./callbacks.js";
-import Desires from "../common/desires.js"
+import Desires from "../common/desires.js";
 import { Intentions } from "../common/intentions.js";
 
 dotenv.config();
 
-console.log("Starting agent", process.env.TOKEN);
+const URL = "http://localhost:8080";
+const TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjUxOTZiYjQzMTcyIiwibmFtZSI6Im1hdHRlbyIsImlhdCI6MTcwNDEyMDMyN30.3AlvP4JKLYZxshw_p0Du0IHddBnZjELpOp-C4qBi0nw";
 
-const client = new DeliverooApi(process.env.URL, process.env.TOKEN);
+console.log("Starting agent", TOKEN);
+
+const client = new DeliverooApi(URL, TOKEN);
 
 client.onMap((w, h, tiles) => initMap(w, h, tiles));
 client.onParcelsSensing((parcels) => updateParcels(parcels));
@@ -37,13 +41,17 @@ setTimeout(async () => {
         Intentions.sort();
         // intention_queue = intention_queue[:5]
         let target = Intentions.getBestIntention();
+        console.log(target);
 
-        if (currentIntention === null) {
-            currentIntention = target;
-        } else if (currentIntention.gain < target.gain) {
-            currentIntention.stop();
-            currentIntention = target;
-        }
+        // if (currentIntention === null || Intentions.success) {
+        //     currentIntention = target;
+        // } else if (currentIntention.gain < target.gain) {
+        //     currentIntention.stop();
+        //     currentIntention = target;
+        // }
+        currentIntention = target;
+
+        console.log(currentIntention);
 
         await Intentions.achieve(client, currentIntention).catch((error) => {
             console.log("Failed intention", error);
@@ -65,7 +73,7 @@ setTimeout(async () => {
         //     }
         // }
 
-        // intention_queue.shift();
+        Intentions.queue.shift();
         await sleep(100);
 
         // console.log(parcel, BeliefSet.getCarriedByMe().length === 0);
@@ -101,6 +109,6 @@ setTimeout(async () => {
         // }
         // await sleep(100);
     }
-}, 10000);
+}, 1000);
 
 export { client };

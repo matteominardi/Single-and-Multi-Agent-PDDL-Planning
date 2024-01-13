@@ -57,6 +57,15 @@ class Parcels extends Set {
         }
     }
 
+    deleteParcel(id) {
+        for (let p of this) {
+            if (p.id === id) {
+                this.delete(p);
+                return;
+            }
+        }
+    }
+
     setCarriedBy(id, carriedBy) {
         for (let p of this) {
             if (p.id === id) {
@@ -93,7 +102,6 @@ class Parcels extends Set {
         }
         return reward;
     }
-
 }
 
 export { Parcel, Parcels };

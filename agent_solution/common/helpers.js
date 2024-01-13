@@ -29,8 +29,7 @@ function distanceBetween(a, b) {
 
 function heuristic(tile) {
     return (
-        BeliefSet.getClosestParcel(tile) +
-        BeliefSet.getClosestDeliverySpot(tile)
+        Math.abs(tile.x - Me.requested_x) + Math.abs(tile.y - Me.requested_y)
     );
 }
 

@@ -1,13 +1,16 @@
 import BeliefSet from "./belief.js";
 import { distanceBetween } from "./helpers.js";
+import { TileType } from "./world.js";
+import Me from "./me.js";
 
 class Desire {
     tile;
     gain;
 
-    constructor(tile, gain) {
+    constructor(tile, gain, parcel = null) {
         this.tile = tile;
         this.gain = gain;
+        this.parcel = parcel;
     }
 }
 
@@ -15,7 +18,7 @@ class Desires {
     static computeDesires() {
         let options = [];
 
-        const parcels = BeliefSet.getParcels();
+        const parcels = Array.from(BeliefSet.getParcels());
 
         for (let p in parcels) {
             if (parcels[p].carriedBy === null) {
@@ -26,12 +29,12 @@ class Desires {
                     BeliefSet.getConfig().PARCEL_DECADING_INTERVAL /
                     BeliefSet.getConfig().MOVEMENT_DURATION;
                 const parcelDistance = distanceBetween(
-                    BeliefSet.getMe(),
-                    parcels[p],
+                    BeliefSet.getMe().getMyPosition(),
+                    BeliefSet.getMap().getTile(parcels[p].x, parcels[p].y),
                 );
                 const closestDeliverySpotDistance = distanceBetween(
-                    parcels[p],
-                    BeliefSet.getClosestDeliverySpot(p),
+                    BeliefSet.getMap().getTile(parcels[p].x, parcels[p].y),
+                    BeliefSet.getClosestDeliverySpot(parcels[p]),
                 );
                 score += BeliefSet.getMyReward(); // me carrying
                 score += parcels[p].reward; // parcel reward
@@ -41,6 +44,7 @@ class Desires {
                     new Desire(
                         BeliefSet.getMap().getTile(parcels[p].x, parcels[p].y),
                         score,
+                        parcels[p],
                     ),
                 );
             }
@@ -55,12 +59,16 @@ class Desires {
             const factor =
                 BeliefSet.getConfig().PARCEL_DECADING_INTERVAL /
                 BeliefSet.getConfig().MOVEMENT_DURATION;
+            console.log("factor", factor);
             const distance = distanceBetween(
-                BeliefSet.getMe(),
+                BeliefSet.getMe().getMyPosition(),
                 deliverySpots[d],
             );
+            console.log("distance", distance);
             score += BeliefSet.getMyReward(); // me carrying
+            console.log("score", score);
             score -= gonnaCarry * factor * distance; // me + parcel decading
+            console.log("score", score);
             options.push(
                 new Desire(
                     BeliefSet.getMap().getTile(
@@ -71,6 +79,7 @@ class Desires {
                 ),
             );
         }
+        console.log("options", options);
         return options.sort((a, b) => b.gain - a.gain); // best first
     }
 }
