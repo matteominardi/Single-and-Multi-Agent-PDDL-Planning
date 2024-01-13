@@ -41,17 +41,16 @@ setTimeout(async () => {
         Intentions.sort();
         // intention_queue = intention_queue[:5]
         let target = Intentions.getBestIntention();
-        console.log(target);
 
+        currentIntention = target;
+
+        // TODO: create loop with subloop for each action in place, so an action can be stopped from the outside, stopping the intention and making it possible to swap it with new ones
         // if (currentIntention === null || Intentions.success) {
         //     currentIntention = target;
         // } else if (currentIntention.gain < target.gain) {
         //     currentIntention.stop();
         //     currentIntention = target;
         // }
-        currentIntention = target;
-
-        console.log(currentIntention);
 
         await Intentions.achieve(client, currentIntention).catch((error) => {
             console.log("Failed intention", error);
