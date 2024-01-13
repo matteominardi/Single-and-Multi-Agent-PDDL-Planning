@@ -1,5 +1,4 @@
 import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
-import { Intention } from "./classes.js";
 import dotenv from "dotenv";
 import BeliefSet from "../common/belief.js";
 import { computeActions, getPath, sleep } from "../common/helpers.js";
@@ -11,9 +10,12 @@ import {
     updateMe,
     updateParcels,
 } from "./callbacks.js";
-import Desires from "../common/desires.js";
+import Desires from "../common/desires.js"
+import { Intentions } from "../common/intentions.js";
 
 dotenv.config();
+
+console.log("Starting agent", process.env.TOKEN);
 
 const client = new DeliverooApi(process.env.URL, process.env.TOKEN);
 
@@ -23,52 +25,47 @@ client.onAgentsSensing((agents) => updateAgents(agents));
 client.onYou((me) => updateMe(me));
 client.onConfig((config) => updateConfig(config));
 
-let intention_queue = [];
 let currentAction = null;
-let current_intention = null;
+let currentIntention = null;
 let failed = false;
 
 setTimeout(async () => {
     while (true) {
         let start = BeliefSet.getMe().getMyPosition();
         let options = Desires.computeDesires();
-        intention_queue.push(...options);
-        intention_queue = intention_queue.sort((a, b) => b.gain - a.gain);
+        Intentions.add(...options);
+        Intentions.sort();
         // intention_queue = intention_queue[:5]
-        let target = intention_queue[0];
+        let target = Intentions.getBestIntention();
 
-        if (currentAction === null) {
-            currentAction = target;
-        } else if (currentAction.gain < target.gain) {
-            current_intention.stop();
-            currentAction = target;
+        if (currentIntention === null) {
+            currentIntention = target;
+        } else if (currentIntention.gain < target.gain) {
+            currentIntention.stop();
+            currentIntention = target;
         }
 
-        // TODO: adapt Intention to the new structure
-        let intention = new Intention(this, currentAction);
-
-        current_intention = intention;
-        await current_intention.achieve().catch((error) => {
+        await Intentions.achieve(client, currentIntention).catch((error) => {
             console.log("Failed intention", error);
             failed = true;
         });
 
-        // qui
-        if (!failed) {
-            if (
-                BeliefSet.getMap().isDeliverySpot(
-                    BeliefSet.getMe().getMyPosition(),
-                )
-            ) {
-                await BeliefSet.me.do_action(client, Actions.PUT_DOWN);
-                BeliefSet.emptyCarriedByMe();
-            } else if (BeliefSet.isParcel(BeliefSet.getMe().getMyPosition())) {
-                await BeliefSet.me.do_action(client, Actions.PICKUP);
-                BeliefSet.setCarriedByMe(BeliefSet.getMe().getMyPosition());
-            }
-        }
+        // // qui
+        // if (!failed) {
+        //     if (
+        //         BeliefSet.getMap().isDeliverySpot(
+        //             BeliefSet.getMe().getMyPosition(),
+        //         )
+        //     ) {
+        //         await BeliefSet.me.do_action(client, Actions.PUT_DOWN);
+        //         BeliefSet.emptyCarriedByMe();
+        //     } else if (BeliefSet.isParcel(BeliefSet.getMe().getMyPosition())) {
+        //         await BeliefSet.me.do_action(client, Actions.PICKUP);
+        //         BeliefSet.setCarriedByMe(BeliefSet.getMe().getMyPosition());
+        //     }
+        // }
 
-        intention_queue.shift();
+        // intention_queue.shift();
         await sleep(100);
 
         // console.log(parcel, BeliefSet.getCarriedByMe().length === 0);
@@ -104,6 +101,6 @@ setTimeout(async () => {
         // }
         // await sleep(100);
     }
-}, 3000);
+}, 10000);
 
 export { client };

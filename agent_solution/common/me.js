@@ -1,5 +1,5 @@
 import BeliefSet from "./belief.js";
-import { sleep } from "./helpers.js";
+import { sleep, getPath } from "./helpers.js";
 
 const Actions = {
     UP: "up",
@@ -51,7 +51,7 @@ class Me {
         return BeliefSet.getMap().getTile(this.last_x, this.last_y);
     }
 
-    do_action(client, action) {
+    async do_action(client, action) {
         console.log("Performing action: " + action);
         if (
             action === Actions.UP ||
@@ -59,23 +59,27 @@ class Me {
             action === Actions.LEFT ||
             action === Actions.RIGHT
         ) {
-            client.move(action).then(async (res) => {
-                if (await this.hasMoved()) {
-                    console.log("Move successful");
-                } else {
-                    // TODO: remove this
-                    this.do_action(client, action);
-                }
-            });
+            await client.move(action)
+            if (await this.hasMoved()) {
+                console.log("Move successful");
+            } else {
+                throw "Move failed"
+            }
         } else if (action === Actions.PICKUP) {
-            client.pickup().then(async (res) => {
-                console.log("Pickup successful");
-            });
+            await client.pickup();
+            console.log("Pickup successful");
+            // TODO: add to inventory
         } else if (action === Actions.PUT_DOWN) {
-            client.putdown().then(async (res) => {
-                console.log("Putdown successful");
-            });
+            client.putdown();
+            console.log("Put down successful");
+            // TODO: remove all from inventory
         }
+    }
+
+    static pathTo(tile) {
+        let current = BeliefSet.getMe().getMyPosition();
+        let path = getPath(current, tile);
+        return path;
     }
 }
 
