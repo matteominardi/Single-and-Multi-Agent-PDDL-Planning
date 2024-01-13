@@ -4,7 +4,14 @@ import dotenv from "dotenv";
 import BeliefSet from "../common/belief.js";
 import { computeActions, getPath, sleep } from "../common/helpers.js";
 import Me, { Actions } from "../common/me.js";
-import { initMap, updateAgents, updateConfig, updateMe, updateParcels } from "./callbacks.js";
+import {
+    initMap,
+    updateAgents,
+    updateConfig,
+    updateMe,
+    updateParcels,
+} from "./callbacks.js";
+import Desires from "../common/desires.js";
 
 dotenv.config();
 
@@ -24,12 +31,11 @@ let failed = false;
 setTimeout(async () => {
     while (true) {
         let start = BeliefSet.getMe().getMyPosition();
-
-        let options = BeliefSet.getTargets();
+        let options = Desires.computeDesires();
         intention_queue.push(...options);
         intention_queue = intention_queue.sort((a, b) => b.gain - a.gain);
         // intention_queue = intention_queue[:5]
-        let target = intention_queue[0]; 
+        let target = intention_queue[0];
 
         if (currentAction === null) {
             currentAction = target;
@@ -40,16 +46,20 @@ setTimeout(async () => {
 
         // TODO: adapt Intention to the new structure
         let intention = new Intention(this, currentAction);
-                
+
         current_intention = intention;
-        await current_intention.achieve().catch(error => {
-            console.log("Failed intention", error)
+        await current_intention.achieve().catch((error) => {
+            console.log("Failed intention", error);
             failed = true;
         });
 
-        // qui 
+        // qui
         if (!failed) {
-            if (BeliefSet.getMap().isDeliverySpot(BeliefSet.getMe().getMyPosition())) {
+            if (
+                BeliefSet.getMap().isDeliverySpot(
+                    BeliefSet.getMe().getMyPosition(),
+                )
+            ) {
                 await BeliefSet.me.do_action(client, Actions.PUT_DOWN);
                 BeliefSet.emptyCarriedByMe();
             } else if (BeliefSet.isParcel(BeliefSet.getMe().getMyPosition())) {
@@ -57,10 +67,9 @@ setTimeout(async () => {
                 BeliefSet.setCarriedByMe(BeliefSet.getMe().getMyPosition());
             }
         }
-        
+
         intention_queue.shift();
         await sleep(100);
-        
 
         // console.log(parcel, BeliefSet.getCarriedByMe().length === 0);
         // if (

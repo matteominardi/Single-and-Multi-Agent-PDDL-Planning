@@ -98,43 +98,6 @@ class BeliefSet {
         });
     }
 
-    static getTargets() {
-        let options = [];
-        
-        const parcels = this.getParcels();
-
-        for (let p in parcels) {
-            if (parcels[p].carriedBy === null) {
-                // gain parcel = distance from me to parcel
-                let score = 0;
-                score += this.getMyReward(); // me carrying
-                score += parcels[p].reward; // parcel reward
-                const gonnaCarry = this.getCarriedByMe().length + 1;
-                score -= gonnaCarry * this.getConfig().PARCEL_DECADING_INTERVAL / this.getConfig().MOVEMENT_DURATION * (distanceBetween(this.getMe(), parcels[p]) + distanceBetween(parcels[p], this.getClosestDeliverySpot(p)));
-                options.push({
-                    tile: this.getMap().getTile(parcels[p].x, parcels[p].y),
-                    gain: score,
-                });
-            }
-        }
-
-        const deliverySpots = this.getMap().getDeliverySpots();
-
-        for (let d in deliverySpots) {
-            // gain parcel = distance from me to parcel
-            let score = 0;
-            score += this.getMyReward(); // me carrying
-            const gonnaCarry = this.getCarriedByMe().length;
-            score -= gonnaCarry * this.getConfig().PARCEL_DECADING_INTERVAL / this.getConfig().MOVEMENT_DURATION * distanceBetween(this.getMe(), deliverySpots[d]);
-            options.push({
-                tile: this.getMap().getTile(deliverySpots[d].x, deliverySpots[d].y),
-                gain: score,
-            });
-        }
-
-        return options.sort((a, b) => b.gain - a.gain);
-    }
-
     static getClosestParcel(tile) {
         let closestParcel = null;
         let closestDistance = Infinity;
