@@ -59,16 +59,12 @@ class Desires {
             const factor =
                 BeliefSet.getConfig().PARCEL_DECADING_INTERVAL /
                 BeliefSet.getConfig().MOVEMENT_DURATION;
-            console.log("factor", factor);
             const distance = distanceBetween(
                 BeliefSet.getMe().getMyPosition(),
                 deliverySpots[d],
             );
-            console.log("distance", distance);
             score += BeliefSet.getMyReward(); // me carrying
-            console.log("score", score);
             score -= gonnaCarry * factor * distance; // me + parcel decading
-            console.log("score", score);
             options.push(
                 new Desire(
                     BeliefSet.getMap().getTile(
@@ -79,7 +75,6 @@ class Desires {
                 ),
             );
         }
-        console.log("options", options);
         return options.sort((a, b) => b.gain - a.gain); // best first
     }
 }
