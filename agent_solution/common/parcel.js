@@ -4,7 +4,6 @@ class Parcel {
     y;
     carriedBy;
     reward;
-    gain;
 
     constructor(id, x, y, carriedBy, reward) {
         this.id = id;
@@ -12,7 +11,6 @@ class Parcel {
         this.y = y;
         this.carriedBy = carriedBy;
         this.reward = reward;
-        this.gain = reward;
     }
 }
 

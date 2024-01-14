@@ -1,7 +1,5 @@
 import BeliefSet from "./belief.js";
 import { distanceBetween } from "./helpers.js";
-import { TileType } from "./world.js";
-import Me from "./me.js";
 
 class Desire {
     tile;
@@ -72,6 +70,14 @@ class Desires {
                         deliverySpots[d].y,
                     ),
                     score,
+                ),
+            );
+        }
+        if (options.length === 0 || BeliefSet.getCarriedByMe().length === 0) {
+            options.push(
+                new Desire(
+                    BeliefSet.getMap().getRandomTile(),
+                    1,
                 ),
             );
         }

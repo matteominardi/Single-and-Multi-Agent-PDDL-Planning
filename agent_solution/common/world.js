@@ -1,4 +1,3 @@
-import Belief from "./belief.js";
 import BeliefSet from "./belief.js";
 
 const TileType = {
@@ -12,7 +11,6 @@ class Tile {
     x;
     y;
     type;
-    gain;
 
     constructor(x, y, delivery, parcelSpawner) {
         this.x = x;
@@ -22,7 +20,6 @@ class Tile {
             : parcelSpawner
               ? TileType.NORMAL
               : TileType.EMPTY;
-        this.gain = 0;
     }
 
     equals(tile) {
@@ -67,6 +64,16 @@ class TileMap {
 
     getMyPosition() {
         return new Tile(BeliefSet.getMe().last_x, BeliefSet.getMe().last_y);
+    }
+
+    getRandomTile() {
+        let tile = null;
+        while (tile === null || tile.type === TileType.EMPTY) {
+            let x = Math.floor(Math.random() * this.width);
+            let y = Math.floor(Math.random() * this.height);
+            tile = this.tiles[x][y];
+        }
+        return tile;
     }
 
     getDeliverySpots() {
@@ -116,4 +123,5 @@ class TileMap {
     }
 }
 
-export { TileMap, TileType, Tile };
+export { Tile, TileMap, TileType };
+
