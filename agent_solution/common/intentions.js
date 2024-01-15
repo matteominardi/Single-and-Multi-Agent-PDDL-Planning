@@ -90,13 +90,16 @@ class Intentions {
                         await BeliefSet.me.do_action(client, Actions.PUT_DOWN);
                         BeliefSet.emptyCarriedByMe();
                     }
-                // } else if (this.requestedIntention.tile.type !== TileType.DELIVERY && this.requestedIntention.parcel) {
                 } else if (this.requestedIntention.tile.type !== TileType.DELIVERY) {
                     let perceivedParcels = Array.from(BeliefSet.getParcels());
                     
                     for (let parcel in perceivedParcels) {
-                        if (perceivedParcels[parcel].x === BeliefSet.me.last_x && perceivedParcels[parcel].y === BeliefSet.me.last_y && perceivedParcels[parcel].carriedBy === null) {
+                        if (perceivedParcels[parcel].carriedBy === null && 
+                            perceivedParcels[parcel].x === BeliefSet.me.last_x && 
+                            perceivedParcels[parcel].y === BeliefSet.me.last_y) {
+                            
                             await BeliefSet.me.do_action(client, Actions.PICKUP);
+                            
                             if (perceivedParcels[parcel].carriedBy === BeliefSet.me.id) {
                                 BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
                                 BeliefSet.removeParcel(perceivedParcels[parcel].id);
@@ -104,11 +107,6 @@ class Intentions {
                             break;
                         }
                     }
-                    
-                    // if (this.requestedIntention.parcel.carriedBy === BeliefSet.me.id) {
-                    //     BeliefSet.setCarriedByMe(this.requestedIntention.parcel);
-                    //     BeliefSet.removeParcel(this.requestedIntention.parcel.id);
-                    // }
                 }
                 this.queue = this.queue.filter(
                     (d) => d.tile !== this.requestedIntention.tile,

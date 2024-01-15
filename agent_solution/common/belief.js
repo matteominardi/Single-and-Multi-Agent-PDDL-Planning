@@ -12,7 +12,21 @@ class BeliefSet {
     static me = new Me();
 
     static getParcels() {
-        return this.perceivedParcels;
+        let parcels = new Parcels();
+        let perceivedParcels = Array.from(this.perceivedParcels);
+        let deliverySpots = this.map.getDeliverySpots();
+        
+        for (let parcel of perceivedParcels) {
+            const isCoordinateMatch = deliverySpots.some(
+                spot => spot.x === parcel.x && spot.y === parcel.y
+            );
+        
+            if (parcel.carriedBy === BeliefSet.me.id || !isCoordinateMatch) {
+                parcels.addParcel(parcel);
+            }
+        }
+
+        return parcels;
     }
 
     static updateParcels(parcels) {
