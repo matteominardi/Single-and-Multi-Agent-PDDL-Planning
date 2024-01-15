@@ -1,5 +1,5 @@
 import BeliefSet from "./belief.js";
-import { computeActions } from "./helpers.js";
+import { computeActions, sleep } from "./helpers.js";
 import Me, { Actions } from "./me.js";
 import { TileType } from "./world.js";
 
@@ -56,6 +56,7 @@ class Intentions {
 
         if (this.shouldStop) {
             console.log("exiting");
+            this.shouldStop = false;
             return;
         }
         
@@ -64,29 +65,56 @@ class Intentions {
         if (path.status === "success") {
             // seguo il path
             const actions = computeActions(path.path);
-            while (actions.length > 0 && !this.shouldStop) {
+            let failed = false;
+
+            // while (actions.length > 0 && !this.shouldStop) {
+            if (actions.length > 0 && !this.shouldStop) {
                 const action = actions.shift();
                 try {
                     await BeliefSet.me.do_action(client, action);
                 } catch (err) {
                     console.log(err);
+                    failed = true;
                     throw err;
                 }
             }
 
-            if (actions.length === 0) {
+            // if (actions.length === 0) {
+            if (!failed) {
                 this.success = true;
             }
 
             if (!this.shouldStop) {
                 if (this.requestedIntention.tile.type === TileType.DELIVERY && BeliefSet.getCarriedByMe().length > 0) {
-                    console.log("int", this.requestedIntention)
-                    await BeliefSet.me.do_action(client, Actions.PUT_DOWN);
-                    BeliefSet.emptyCarriedByMe();
-                } else if (this.requestedIntention.parcel) {
-                    await BeliefSet.me.do_action(client, Actions.PICKUP);
-                    BeliefSet.setCarriedByMe(this.requestedIntention.parcel);
-                    BeliefSet.removeParcel(this.requestedIntention.parcel.id);
+                    if (BeliefSet.me.last_x === this.requestedIntention.tile.x && BeliefSet.me.last_y === this.requestedIntention.tile.y) {
+                        await BeliefSet.me.do_action(client, Actions.PUT_DOWN);
+                        BeliefSet.emptyCarriedByMe();
+                    }
+                // } else if (this.requestedIntention.tile.type !== TileType.DELIVERY && this.requestedIntention.parcel) {
+                } else if (this.requestedIntention.tile.type !== TileType.DELIVERY) {
+                    let perceivedParcels = Array.from(BeliefSet.getParcels());
+                    
+                    console.log("ora sono qui ", BeliefSet.me.last_x, BeliefSet.me.last_y, perceivedParcels)
+                    
+                    for (let parcel in perceivedParcels) {
+                        console.log("parcellaaa ", perceivedParcels[parcel])
+                        
+                        if (perceivedParcels[parcel].x === BeliefSet.me.last_x && perceivedParcels[parcel].y === BeliefSet.me.last_y && perceivedParcels[parcel].carriedBy === null) {
+                            console.log("sto provando a fare pickup")
+                            
+                            await BeliefSet.me.do_action(client, Actions.PICKUP);
+                            if (perceivedParcels[parcel].carriedBy === BeliefSet.me.id) {
+                                BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
+                                BeliefSet.removeParcel(perceivedParcels[parcel].id);
+                            }
+                            break;
+                        }
+                    }
+                    
+                    // if (this.requestedIntention.parcel.carriedBy === BeliefSet.me.id) {
+                    //     BeliefSet.setCarriedByMe(this.requestedIntention.parcel);
+                    //     BeliefSet.removeParcel(this.requestedIntention.parcel.id);
+                    // }
                 }
                 this.queue = this.queue.filter(
                     (d) => d.tile !== this.requestedIntention.tile,

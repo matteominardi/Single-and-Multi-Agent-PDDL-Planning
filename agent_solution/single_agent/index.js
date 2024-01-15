@@ -31,15 +31,23 @@ setTimeout(async () => {
         let options = Desires.computeDesires();
         Intentions.add(options);
         Intentions.sort();
-        // intention_queue = intention_queue[:5]
+        
         let target = Intentions.getBestIntention();
-        console.log("target", target.tile.x, target.tile.y, target.gain);
+        if (previousTarget)
+            console.log("current target", previousTarget.tile.x, previousTarget.tile.y, previousTarget.gain)
+        console.log("new target", target.tile.x, target.tile.y, target.gain);
         
         if (failed && target.equals(previousTarget)) {
             console.log("swapping");
             Intentions.queue.shift();
             target = Intentions.getBestIntention();
-        }
+            failed = false;
+        } 
+        // else if (previousTarget && !target.equals(previousTarget) && target.gain > previousTarget.gain) {
+        //     console.log("changing ", previousTarget.tile.x, previousTarget.tile.y, previousTarget.gain, 
+        //                 "with ", target.tile.x, target.tile.y, target.gain);
+        //     Intentions.stop();
+        // }
 
         previousTarget = target;
 
