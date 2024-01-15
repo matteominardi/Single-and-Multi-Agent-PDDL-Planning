@@ -38,13 +38,16 @@ class Desires {
                 score += parcels[p].reward; // parcel reward
                 score += closestDeliverySpotDistance; // closest delivery spot
                 score -= gonnaCarry * factor * parcelDistance; // me + parcel decading
-                options.push(
-                    new Desire(
-                        BeliefSet.getMap().getTile(parcels[p].x, parcels[p].y),
-                        score,
-                        parcels[p],
-                    ),
-                );
+
+                if (score > 0) {
+                    options.push(
+                        new Desire(
+                            BeliefSet.getMap().getTile(parcels[p].x, parcels[p].y),
+                            score,
+                            parcels[p],
+                        ),
+                    );
+                }                
             }
         }
 
@@ -63,17 +66,20 @@ class Desires {
             );
             score += BeliefSet.getMyReward(); // me carrying
             score -= gonnaCarry * factor * distance; // me + parcel decading
-            options.push(
-                new Desire(
-                    BeliefSet.getMap().getTile(
-                        deliverySpots[d].x,
-                        deliverySpots[d].y,
+
+            if (score > 0) {
+                options.push(
+                    new Desire(
+                        BeliefSet.getMap().getTile(
+                            deliverySpots[d].x,
+                            deliverySpots[d].y,
+                        ),
+                        score,
                     ),
-                    score,
-                ),
-            );
+                );
+            }
         }
-        if (options.length === 0 || BeliefSet.getCarriedByMe().length === 0) {
+        if (options.length === 0 && BeliefSet.getCarriedByMe().length === 0) {
             options.push(
                 new Desire(
                     BeliefSet.getMap().getRandomTile(),

@@ -21,7 +21,7 @@ class BeliefSet {
                 spot => spot.x === parcel.x && spot.y === parcel.y
             );
         
-            if (parcel.carriedBy === BeliefSet.me.id || !isCoordinateMatch) {
+            if (parcel.carriedBy === this.getMe().id || !isCoordinateMatch) {
                 parcels.addParcel(parcel);
             }
         }
@@ -53,7 +53,7 @@ class BeliefSet {
         } else {
             Config.PARCEL_DECADING_INTERVAL = parseInt(
                 config.PARCEL_DECADING_INTERVAL.slice(0, -1),
-            );
+            ) * 1000;
         }
     }
 
@@ -111,7 +111,7 @@ class BeliefSet {
     }
 
     static updateMe(me) {
-        BeliefSet.me.update(me);
+        this.getMe().update(me);
     }
 
     static isParcel(tile) {

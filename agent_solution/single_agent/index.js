@@ -10,6 +10,7 @@ import {
     updateMe,
     updateParcels,
 } from "./callbacks.js";
+import BeliefSet from "../common/belief.js";
 
 dotenv.config();
 
@@ -29,9 +30,10 @@ let failed = false;
 setTimeout(async () => {
     while (true) {
         let options = Desires.computeDesires();
+        // console.log("options", options.length, options)
         Intentions.add(options);
         Intentions.sort();
-        
+        console.log("queue", Intentions.queue.length, Intentions.queue)
         let target = Intentions.getBestIntention();
         if (previousTarget)
             console.log("current target", previousTarget.tile.x, previousTarget.tile.y, previousTarget.gain)

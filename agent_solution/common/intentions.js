@@ -71,7 +71,7 @@ class Intentions {
             if (actions.length > 0 && !this.shouldStop) {
                 const action = actions.shift();
                 try {
-                    await BeliefSet.me.do_action(client, action);
+                    await BeliefSet.getMe().do_action(client, action);
                 } catch (err) {
                     console.log(err);
                     failed = true;
@@ -84,34 +84,34 @@ class Intentions {
                 this.success = true;
             }
 
-            if (!this.shouldStop) {
-                if (this.requestedIntention.tile.type === TileType.DELIVERY && BeliefSet.getCarriedByMe().length > 0) {
-                    if (BeliefSet.me.last_x === this.requestedIntention.tile.x && BeliefSet.me.last_y === this.requestedIntention.tile.y) {
-                        await BeliefSet.me.do_action(client, Actions.PUT_DOWN);
-                        BeliefSet.emptyCarriedByMe();
-                    }
-                } else if (this.requestedIntention.tile.type !== TileType.DELIVERY) {
-                    let perceivedParcels = Array.from(BeliefSet.getParcels());
-                    
-                    for (let parcel in perceivedParcels) {
-                        if (perceivedParcels[parcel].carriedBy === null && 
-                            perceivedParcels[parcel].x === BeliefSet.me.last_x && 
-                            perceivedParcels[parcel].y === BeliefSet.me.last_y) {
-                            
-                            await BeliefSet.me.do_action(client, Actions.PICKUP);
-                            
-                            if (perceivedParcels[parcel].carriedBy === BeliefSet.me.id) {
-                                BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
-                                BeliefSet.removeParcel(perceivedParcels[parcel].id);
-                            }
-                            break;
+            // if (!this.shouldStop) {
+            let currentTile = BeliefSet.getMe().getMyPosition();
+
+            if (currentTile.type === TileType.DELIVERY && BeliefSet.getCarriedByMe().length > 0) {
+                await BeliefSet.getMe().do_action(client, Actions.PUT_DOWN);
+                BeliefSet.emptyCarriedByMe();
+            } else if (currentTile.type !== TileType.DELIVERY) {
+                let perceivedParcels = Array.from(BeliefSet.getParcels());
+                
+                for (let parcel in perceivedParcels) {
+                    if (perceivedParcels[parcel].carriedBy === null && 
+                        perceivedParcels[parcel].x === BeliefSet.getMe().last_x && 
+                        perceivedParcels[parcel].y === BeliefSet.getMe().last_y) { 
+                        console.log("Trying to pick up", perceivedParcels[parcel])
+                        await BeliefSet.getMe().do_action(client, Actions.PICKUP);
+                        
+                        if (perceivedParcels[parcel].carriedBy === BeliefSet.getMe().id) {
+                            BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
+                            BeliefSet.removeParcel(perceivedParcels[parcel].id);
                         }
+                        break;
                     }
                 }
-                this.queue = this.queue.filter(
-                    (d) => d.tile !== this.requestedIntention.tile,
-                );
             }
+            this.queue = this.queue.filter(
+                (d) => d.tile !== currentTile && d.gain > 0 && (d.parcel ? d.parcel.reward > 1 : true),
+            );
+            // }
         } else {
             throw "Path not found";
         }
