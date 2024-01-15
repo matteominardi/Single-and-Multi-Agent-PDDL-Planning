@@ -1,5 +1,5 @@
 import BeliefSet from "./belief.js";
-import { getPath, sleep } from "./helpers.js";
+import { getPath } from "./helpers.js";
 
 const Actions = {
     UP: "up",
@@ -39,7 +39,6 @@ class Me {
     }
 
     async hasMoved() {
-        await sleep(200);
         let check =
             this.previous_x !== this.last_x || this.previous_y !== this.last_y;
         this.previous_x = this.last_x;
