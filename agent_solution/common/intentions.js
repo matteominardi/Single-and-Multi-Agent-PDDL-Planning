@@ -94,14 +94,8 @@ class Intentions {
                 } else if (this.requestedIntention.tile.type !== TileType.DELIVERY) {
                     let perceivedParcels = Array.from(BeliefSet.getParcels());
                     
-                    console.log("ora sono qui ", BeliefSet.me.last_x, BeliefSet.me.last_y, perceivedParcels)
-                    
                     for (let parcel in perceivedParcels) {
-                        console.log("parcellaaa ", perceivedParcels[parcel])
-                        
                         if (perceivedParcels[parcel].x === BeliefSet.me.last_x && perceivedParcels[parcel].y === BeliefSet.me.last_y && perceivedParcels[parcel].carriedBy === null) {
-                            console.log("sto provando a fare pickup")
-                            
                             await BeliefSet.me.do_action(client, Actions.PICKUP);
                             if (perceivedParcels[parcel].carriedBy === BeliefSet.me.id) {
                                 BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
