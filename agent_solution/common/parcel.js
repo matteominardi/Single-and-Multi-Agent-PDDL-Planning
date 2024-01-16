@@ -1,3 +1,5 @@
+import BeliefSet from "./belief.js";
+
 class Parcel {
     id;
     x;
@@ -87,6 +89,7 @@ class Parcels extends Set {
         for (let p of this) {
             if (p.carriedBy === id) {
                 p.carriedBy = null;
+                BeliefSet.removeParcel(p.id);
             }
         }
     }

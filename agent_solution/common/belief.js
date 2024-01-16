@@ -7,6 +7,7 @@ import Config from "./config.js";
 
 class BeliefSet {
     static perceivedParcels = new Parcels();
+    static ignoredParcels = new Parcels();
     static perceivedAgents = new Agents();
     static map = null;
     static me = new Me();
@@ -17,11 +18,14 @@ class BeliefSet {
         let deliverySpots = this.map.getDeliverySpots();
         
         for (let parcel of perceivedParcels) {
+            parcel.x = Math.round(parcel.x);
+            parcel.y = Math.round(parcel.y);
+
             const isCoordinateMatch = deliverySpots.some(
                 spot => spot.x === parcel.x && spot.y === parcel.y
             );
         
-            if (parcel.carriedBy === this.getMe().id || !isCoordinateMatch) {
+            if (parcel.carriedBy === this.getMe().id || (!isCoordinateMatch && this.ignoredParcels.getParcel(parcel.id) === null)) {
                 parcels.addParcel(parcel);
             }
         }
@@ -31,19 +35,22 @@ class BeliefSet {
 
     static updateParcels(parcels) {
         for (let p in parcels) {
-            // check if id already present
-            if (this.perceivedParcels.getParcel(parcels[p].id) !== null) {
-                // update parcel
-                this.perceivedParcels.updateParcel(parcels[p]);
-            } else {
-                // add parcel
-                this.perceivedParcels.addParcel(parcels[p]);
+            if (this.ignoredParcels.getParcel(p.id) === null && p.reward > 1) {
+                // check if id already present
+                if (this.perceivedParcels.getParcel(parcels[p].id) !== null) {
+                    // update parcel
+                    this.perceivedParcels.updateParcel(parcels[p]);
+                } else {
+                    // add parcel
+                    this.perceivedParcels.addParcel(parcels[p]);
+                }
             }
         }
     }
 
     static removeParcel(parcelId) {
-        this.perceivedParcels.deleteParcel(parcelId);
+        // this.perceivedParcels.deleteParcel(parcelId);
+        this.ignoredParcels.addParcel(this.perceivedParcels.getParcel(parcelId));
     }
 
     static updateConfig(config) {

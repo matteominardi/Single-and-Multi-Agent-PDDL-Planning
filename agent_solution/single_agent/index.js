@@ -29,14 +29,13 @@ let failed = false;
 
 setTimeout(async () => {
     while (true) {
+        Intentions.empty();
+
         let options = Desires.computeDesires();
-        // console.log("options", options.length, options)
         Intentions.add(options);
         Intentions.sort();
         console.log("queue", Intentions.queue.length, Intentions.queue)
         let target = Intentions.getBestIntention();
-        if (previousTarget)
-            console.log("current target", previousTarget.tile.x, previousTarget.tile.y, previousTarget.gain)
         console.log("new target", target.tile.x, target.tile.y, target.gain);
         
         if (failed && target.equals(previousTarget)) {
@@ -84,6 +83,7 @@ setTimeout(async () => {
         //     console.log("passing into the next intention");
         //     Intentions.queue.shift();
         // }
+        console.log("---------------------------------------------------");
         await sleep(100);
     }
 }, 1000);
