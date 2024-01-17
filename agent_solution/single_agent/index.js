@@ -29,7 +29,9 @@ let failed = false;
 
 setTimeout(async () => {
     while (true) {
-        Intentions.empty();
+        BeliefSet.decayParcelsReward();
+        Intentions.decayGains();
+        Intentions.filterGains();
 
         let options = Desires.computeDesires();
         Intentions.add(options);

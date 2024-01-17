@@ -54,6 +54,45 @@ function computeActions(path) {
     return actions;
 }
 
+function computeParcelGain(parcel) {
+    let score = 0;
+
+    const gonnaCarry = BeliefSet.getCarriedByMe().length + 1; // me + parcel
+    const factor =
+        BeliefSet.getConfig().PARCEL_DECADING_INTERVAL /
+        BeliefSet.getConfig().MOVEMENT_DURATION;
+    const parcelDistance = distanceBetween(
+        BeliefSet.getMe().getMyPosition(),
+        BeliefSet.getMap().getTile(parcel.x, parcel.y),
+    );
+    const closestDeliverySpotDistance = distanceBetween(
+        BeliefSet.getMap().getTile(parcel.x, parcel.y),
+        BeliefSet.getClosestDeliverySpot(parcel),
+    );
+    score += BeliefSet.getMyReward(); // me carrying
+    score += parcel.reward; // parcel reward
+    score -= gonnaCarry * factor * (parcelDistance + closestDeliverySpotDistance); // me + parcel decading
+
+    return score;
+}
+
+function computeDeliveryGain(deliverySpot) {
+    let score = 0;
+
+    const gonnaCarry = BeliefSet.getCarriedByMe().length;
+    const factor =
+        BeliefSet.getConfig().PARCEL_DECADING_INTERVAL /
+        BeliefSet.getConfig().MOVEMENT_DURATION;
+    const distance = distanceBetween(
+        BeliefSet.getMe().getMyPosition(),
+        deliverySpot,
+    );
+    score += BeliefSet.getMyReward(); // me carrying
+    score -= gonnaCarry * factor * distance; // me + parcel decading
+
+    return score;
+}
+
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
-export { getPath, isEnd, distanceBetween, computeActions, sleep };
+export { getPath, isEnd, distanceBetween, computeActions, computeParcelGain, computeDeliveryGain, sleep };

@@ -1,5 +1,5 @@
 import BeliefSet from "./belief.js";
-import { computeActions, sleep } from "./helpers.js";
+import { computeActions, computeDeliveryGain, computeParcelGain } from "./helpers.js";
 import Me, { Actions } from "./me.js";
 import { TileType } from "./world.js";
 
@@ -21,21 +21,16 @@ class Intentions {
     static requestedIntention = null;
 
     static add(desires) {
-        // console.log("Desires ", desires.length, desires);
-        
-        // console.log("prima", this.queue.length, desires);
         for (let desire of desires) {
             // check if the same tile is already in the queue, and update the gain
             const existingDesireIndex = this.queue.findIndex(d => d.tile.equals(desire.tile));
-            // console.log("existingDesireIndex", existingDesireIndex);
+            
             if (existingDesireIndex !== -1) {
                 this.queue[existingDesireIndex].gain = desire.gain;
             } else {
-                // console.log("adding desire ", desire);
                 this.queue.push(desire);
             }
         }
-        // console.log("dopo", this.queue.length, desires[0]);
     }
 
     static sort() {
@@ -46,6 +41,22 @@ class Intentions {
 
     static empty() {
         this.queue = [];
+    }
+
+    static decayGains() {        
+        for (let intention of this.queue) {
+            if (intention.parcel) {
+                intention.gain = computeParcelGain(intention.parcel);
+            } else {
+                intention.gain = computeDeliveryGain(intention.tile);
+            }
+        }
+    }
+
+    static filterGains() {
+        this.queue = this.queue.filter(
+            (d) => d.gain > 0,
+        );
     }
 
     static getBestIntention() {
@@ -91,16 +102,16 @@ class Intentions {
             // if (!this.shouldStop) {
             let currentTile = BeliefSet.getMe().getMyPosition();
             console.log("currentTile", currentTile.x, currentTile.y, currentTile.type)
-            console.log("my reward ", BeliefSet.getMyReward())
-            console.log("getCarriedByMe", BeliefSet.getCarriedByMe().length, BeliefSet.getCarriedByMe())
+            console.log("my reward ", BeliefSet.getMyReward(), "getCarriedByMe", BeliefSet.getCarriedByMe().length)
+            let perceivedParcels = Array.from(BeliefSet.getParcels());
+            console.log("perceivedParcels", perceivedParcels.length, perceivedParcels)
             if (currentTile.type === TileType.DELIVERY && BeliefSet.getCarriedByMe().length > 0) {
                 await BeliefSet.getMe().do_action(client, Actions.PUT_DOWN);
                 BeliefSet.emptyCarriedByMe();
             } else if (currentTile.type === TileType.NORMAL) {
-                let perceivedParcels = Array.from(BeliefSet.getParcels());
-                // console.log("perceivedParcels", perceivedParcels.length, perceivedParcels)
                 for (let parcel in perceivedParcels) {
-                    if (perceivedParcels[parcel].carriedBy === null && 
+                    if (BeliefSet.shouldConsiderParcel(perceivedParcels[parcel].id) &&
+                        perceivedParcels[parcel].carriedBy === null && 
                         perceivedParcels[parcel].x === BeliefSet.getMe().last_x && 
                         perceivedParcels[parcel].y === BeliefSet.getMe().last_y) { 
                         console.log("Trying to pick up", perceivedParcels[parcel])

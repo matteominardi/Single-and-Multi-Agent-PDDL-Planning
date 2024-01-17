@@ -21,11 +21,11 @@ class BeliefSet {
             parcel.x = Math.round(parcel.x);
             parcel.y = Math.round(parcel.y);
 
-            const isCoordinateMatch = deliverySpots.some(
+            const isOnDeliverySpot = deliverySpots.some(
                 spot => spot.x === parcel.x && spot.y === parcel.y
             );
-        
-            if (parcel.carriedBy === this.getMe().id || (!isCoordinateMatch && this.ignoredParcels.getParcel(parcel.id) === null)) {
+            
+            if (parcel.carriedBy === this.getMe().id || (!isOnDeliverySpot && this.shouldConsiderParcel(parcel.id))) {
                 parcels.addParcel(parcel);
             }
         }
@@ -35,7 +35,7 @@ class BeliefSet {
 
     static updateParcels(parcels) {
         for (let p in parcels) {
-            if (this.ignoredParcels.getParcel(p.id) === null && p.reward > 1) {
+            if (this.shouldConsiderParcel(parcels[p].id)) {
                 // check if id already present
                 if (this.perceivedParcels.getParcel(parcels[p].id) !== null) {
                     // update parcel
@@ -43,6 +43,22 @@ class BeliefSet {
                 } else {
                     // add parcel
                     this.perceivedParcels.addParcel(parcels[p]);
+                }
+            }
+        }
+    }
+
+    static shouldConsiderParcel(parcelId) {
+        return this.ignoredParcels.getParcel(parcelId) === null;
+    }
+
+    static decayParcelsReward() {
+        const decay = BeliefSet.getConfig().PARCEL_DECADING_INTERVAL / 1000;
+        for (let parcel of Array.from(this.perceivedParcels)) {
+            if (this.shouldConsiderParcel(parcel.id) && parcel.carriedBy === null) {
+                parcel.reward -= decay;
+                if (parcel.reward <= 0) {
+                    this.removeParcel(parcel.id);
                 }
             }
         }
@@ -56,7 +72,7 @@ class BeliefSet {
     static updateConfig(config) {
         Config.MOVEMENT_DURATION = config.MOVEMENT_DURATION;
         if (config.PARCEL_DECADING_INTERVAL === "infinite") {
-            Config.PARCEL_DECADING_INTERVAL = 1;
+            Config.PARCEL_DECADING_INTERVAL = 0;
         } else {
             Config.PARCEL_DECADING_INTERVAL = parseInt(
                 config.PARCEL_DECADING_INTERVAL.slice(0, -1),
