@@ -112,18 +112,21 @@ class Intentions {
                 for (let parcel in perceivedParcels) {
                     if (BeliefSet.shouldConsiderParcel(perceivedParcels[parcel].id) &&
                         perceivedParcels[parcel].carriedBy === null && 
-                        perceivedParcels[parcel].x === BeliefSet.getMe().last_x && 
-                        perceivedParcels[parcel].y === BeliefSet.getMe().last_y) { 
+                        perceivedParcels[parcel].x === currentTile.x && 
+                        perceivedParcels[parcel].y === currentTile.y) { 
                         console.log("Trying to pick up", perceivedParcels[parcel])
                         await BeliefSet.getMe().do_action(client, Actions.PICKUP);
                         
                         BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
+                        this.queue = this.queue.filter(
+                            (d) => (d.parcel ? d.parcel.id !== perceivedParcels[parcel].id : true),
+                        );
                         break;
                     }
                 }
             }
             this.queue = this.queue.filter(
-                (d) => d.tile !== currentTile && d.gain > 0 && (d.parcel ? d.parcel.reward > 1 : true),
+                (d) => d.tile !== currentTile && d.gain > 0 && (d.parcel ? d.parcel.reward > 0 : true),
             );
             // }
         } else {

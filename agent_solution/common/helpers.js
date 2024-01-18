@@ -71,7 +71,8 @@ function computeParcelGain(parcel) {
     );
     score += BeliefSet.getMyReward(); // me carrying
     score += parcel.reward; // parcel reward
-    score -= gonnaCarry * factor * (parcelDistance + closestDeliverySpotDistance); // me + parcel decading
+    score -= parcelDistance;
+    score -= gonnaCarry * factor * closestDeliverySpotDistance; // me + parcels decading
 
     return score;
 }
