@@ -25,6 +25,7 @@ client.onYou((me) => updateMe(me));
 client.onConfig((config) => updateConfig(config));
 
 let previousTarget = null;
+let patrolling = false;
 let failed = false;
 
 setTimeout(async () => {
@@ -33,6 +34,9 @@ setTimeout(async () => {
         Intentions.decayGains();
         Intentions.filterGains();
 
+        let perceivedParcels = Array.from(BeliefSet.getParcels());
+        console.log("perceivedParcels", perceivedParcels.length, perceivedParcels)
+        
         let options = Desires.computeDesires();
         Intentions.add(options);
         Intentions.sort();
@@ -52,7 +56,25 @@ setTimeout(async () => {
         //     Intentions.stop();
         // }
 
-        previousTarget = target;
+        if (BeliefSet.getCarriedByMe().length === 0) {
+            if (!patrolling && target.gain <= 1) {
+                console.log("started patrolling");
+                patrolling = true;
+            } else if (patrolling && target.gain <=1) {
+                console.log("patrolling");
+            } else if (patrolling && target.gain > 1) {
+                console.log("stopped patrolling");
+                patrolling = false;
+            }
+        }
+
+        if (!previousTarget || !patrolling) {
+            previousTarget = target;
+        } 
+        // else if (patrolling) {
+        //     target = previousTarget;
+        // }
+        Intentions.requestedIntention = target;
 
         // TODO: create loop with subloop for each action in place, so an action can be stopped from the outside, stopping the intention and making it possible to swap it with new ones
         // if (currentIntention === null || Intentions.success) {
@@ -62,7 +84,6 @@ setTimeout(async () => {
         //     currentIntention = target;
         // }
 
-        Intentions.requestedIntention = target;
 
         await Intentions.achieve(client).then(() => {
             // if (Intentions.shouldStop) {

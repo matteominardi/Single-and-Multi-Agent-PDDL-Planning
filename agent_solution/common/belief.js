@@ -56,7 +56,7 @@ class BeliefSet {
     }
 
     static decayParcelsReward() {
-        const decay = BeliefSet.getConfig().PARCEL_DECADING_INTERVAL / 1000;
+        const decay = 1000 / BeliefSet.getConfig().PARCEL_DECADING_INTERVAL;
         for (let parcel of Array.from(this.perceivedParcels)) {
             if (
                 this.shouldConsiderParcel(parcel.id) &&
@@ -80,7 +80,7 @@ class BeliefSet {
     static updateConfig(config) {
         Config.MOVEMENT_DURATION = config.MOVEMENT_DURATION;
         if (config.PARCEL_DECADING_INTERVAL === "infinite") {
-            Config.PARCEL_DECADING_INTERVAL = 1;
+            Config.PARCEL_DECADING_INTERVAL = Infinity;
         } else {
             Config.PARCEL_DECADING_INTERVAL =
                 parseInt(config.PARCEL_DECADING_INTERVAL.slice(0, -1)) * 1000;

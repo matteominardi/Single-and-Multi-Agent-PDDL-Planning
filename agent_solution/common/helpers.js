@@ -58,9 +58,9 @@ function computeParcelGain(parcel) {
     let score = 0;
 
     const gonnaCarry = BeliefSet.getCarriedByMe().length + 1; // me + parcel
-    const factor =
-        BeliefSet.getConfig().PARCEL_DECADING_INTERVAL /
-        BeliefSet.getConfig().MOVEMENT_DURATION;
+    const factor = 0.01 +
+        BeliefSet.getConfig().MOVEMENT_DURATION /
+        BeliefSet.getConfig().PARCEL_DECADING_INTERVAL;
     const parcelDistance = distanceBetween(
         BeliefSet.getMe().getMyPosition(),
         BeliefSet.getMap().getTile(parcel.x, parcel.y),
@@ -71,7 +71,7 @@ function computeParcelGain(parcel) {
     );
     score += BeliefSet.getMyReward(); // me carrying
     score += parcel.reward; // parcel reward
-    score -= parcelDistance;
+    score -= factor * parcelDistance;
     score -= gonnaCarry * factor * closestDeliverySpotDistance; // me + parcels decading
 
     return score;
@@ -81,9 +81,9 @@ function computeDeliveryGain(deliverySpot) {
     let score = 0;
 
     const gonnaCarry = BeliefSet.getCarriedByMe().length;
-    const factor =
-        BeliefSet.getConfig().PARCEL_DECADING_INTERVAL /
-        BeliefSet.getConfig().MOVEMENT_DURATION;
+    const factor = 0.01 +
+        BeliefSet.getConfig().MOVEMENT_DURATION /
+        BeliefSet.getConfig().PARCEL_DECADING_INTERVAL;
     const distance = distanceBetween(
         BeliefSet.getMe().getMyPosition(),
         deliverySpot,

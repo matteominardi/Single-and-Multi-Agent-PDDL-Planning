@@ -48,7 +48,9 @@ class Intentions {
             if (intention.parcel) {
                 intention.gain = computeParcelGain(intention.parcel);
             } else {
-                intention.gain = computeDeliveryGain(intention.tile);
+                if (intention.tile.type === TileType.DELIVERY) {
+                    intention.gain = computeDeliveryGain(intention.tile);
+                }
             }
         }
     }
