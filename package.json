@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "server": "node server/index.js level_1",
+    "server": "node server/index.js level_2",
     "client": "node agent_solution/single_agent/index.js"
   },
   "repository": {

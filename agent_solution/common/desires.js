@@ -1,5 +1,9 @@
 import BeliefSet from "./belief.js";
-import { computeParcelGain, computeDeliveryGain, distanceBetween } from "./helpers.js";
+import {
+    computeParcelGain,
+    computeDeliveryGain,
+    distanceBetween,
+} from "./helpers.js";
 
 class Desire {
     tile;
@@ -19,20 +23,28 @@ class Desires {
         const parcels = Array.from(BeliefSet.getParcels());
 
         for (let p in parcels) {
-            if (BeliefSet.shouldConsiderParcel(parcels[p].id) && parcels[p].carriedBy === null) {
+            if (
+                BeliefSet.shouldConsiderParcel(parcels[p].id) &&
+                parcels[p].carriedBy === null
+            ) {
                 let score = computeParcelGain(parcels[p]);
 
                 if (score > 0) {
                     options.push(
                         new Desire(
-                            BeliefSet.getMap().getTile(parcels[p].x, parcels[p].y),
+                            BeliefSet.getMap().getTile(
+                                parcels[p].x,
+                                parcels[p].y,
+                            ),
                             score,
                             parcels[p],
                         ),
                     );
-                }                
+                }
             }
         }
+
+        const parcelsViewed = options.length;
 
         const deliverySpots = BeliefSet.getMap().getDeliverySpots();
 
@@ -51,13 +63,10 @@ class Desires {
                 );
             }
         }
-        if (options.length === 0 && BeliefSet.getCarriedByMe().length === 0) {
-            options.push(
-                new Desire(
-                    BeliefSet.getMap().getRandomTile(),
-                    1,
-                ),
-            );
+        // check for all options if their .parcel is null
+
+        if (parcelsViewed === 0 && BeliefSet.getCarriedByMe().length === 0) {
+            options.push(new Desire(BeliefSet.getMap().getRandomTile(), 1));
         }
         return options.sort((a, b) => b.gain - a.gain); // best first
     }
