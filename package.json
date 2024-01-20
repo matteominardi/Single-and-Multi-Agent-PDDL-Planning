@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "server": "node server/index.js level_1",
-    "client": "node agent_solution/single_agent/index.js"
+    "client": "node agent_solution/single_agent/index.js",
+    "pddl": "node agent_solution/single_agent_pddl/index.js"
   },
   "repository": {
     "type": "git",

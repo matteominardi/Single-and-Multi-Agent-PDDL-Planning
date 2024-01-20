@@ -2,19 +2,17 @@
 (define (domain default)
     (:requirements :strips)
     (:predicates
-        (self ?s)
-        (opponent ?a)
-        (parcel ?p)
-        (carried ?p) ; serve a capire se una parcel è un possibile obiettivo
-        (carries ?a ?p) ; serve a capire se l'agent può consegnare quella parcel
-        (tile ?t)
-        (delivery ?t)
-        (at ?aop ?t)
-        (right ?t1 ?t2)
-        (left ?t1 ?t2)
-        (up ?t1 ?t2)
-        (down ?t1 ?t2)
-        (available ?t)
+        (self ?s) ; self s is our agent
+        (parcel ?p) ; p is a parcel
+        (carries ?s ?p) ; self s carries parcel p
+        (tile ?t) ; t is a tile (TYPE 0)
+        (delivery ?t) ; tile t is a delivery point (TYPE 1)
+        (at ?sop ?t) ; self or parcel at tile t
+        (right ?t1 ?t2) ; tile t1 is on the right of tile t2
+        (left ?t1 ?t2) ; tile t1 is on the left of tile t2
+        (up ?t1 ?t2) ; tile t1 is on the top of tile t2
+        (down ?t1 ?t2) ; tile t1 is on the bottom of tile t2
+        (available ?t) ; tile t is available (not occupied by another agent)
     )
     
     (:action move_right
