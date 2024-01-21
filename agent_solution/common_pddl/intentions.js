@@ -66,11 +66,6 @@ class Intentions {
     }
 
     static async achieve(client) {
-        // prendo la prima intenzione dalla coda
-        // calcolo la path per arrivare là
-        // se la path è valida, la seguo, fino a che non arrivo o la interrompo
-        // se la path non è valida, la scarto
-
         if (this.shouldStop) {
             console.log("exiting");
             this.shouldStop = false;
@@ -80,7 +75,6 @@ class Intentions {
 
         const path = Me.pathTo(this.requestedIntention.tile);
         if (path.status === "success") {
-            // seguo il path
             const actions = computeActions(path.path);
             let failed = false;
 
@@ -94,6 +88,12 @@ class Intentions {
                     failed = true;
                     throw err;
                 }
+            }
+
+            if (this.shouldStop) {
+                console.log(BeliefSet.getMe().id, "stopped before reaching target", this.requestedIntention.tile);
+                this.shouldStop = false;
+                return;
             }
 
             if (!failed) {
