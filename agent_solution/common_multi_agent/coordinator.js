@@ -1,29 +1,24 @@
 class Coordinator {
-    coordinatedActions;
-    allIntentions;
+    static coordinatedActions = new Map();
+    static allIntentions = [];
 
-    constructor() {
-        this.coordinatedActions = new Map();
-        this.allIntentions = [];
-    }
-
-    hasAgent(agentId) {
+    static hasAgent(agentId) {
         return this.coordinatedActions.has(agentId);
     }
 
-    addAgent(agentId) {
+    static addAgent(agentId) {
         this.coordinatedActions.set(agentId, []);
     }
 
-    addAgentIntentions(agentId, intentions) {
+    static addAgentIntentions(agentId, intentions) {
         this.coordinatedActions.set(agentId, intentions);
     }
     
-    getCoordinatedIntentions(agentId) {
+    static getCoordinatedIntentions(agentId) {
         return this.coordinatedActions.get(agentId);
     }
 
-    isAlreadyActiveIntention(agentId, intention) {
+    static isAlreadyActiveIntention(agentId, intention) {
         let isActive = false;
         
         for (const otherAgentId of this.coordinatedActions.keys()) {
@@ -46,7 +41,7 @@ class Coordinator {
         return isActive;
     }
 
-    getBestCoordinatedIntention(agentId) {
+    static getBestCoordinatedIntention(agentId) {
         const intentions = this.coordinatedActions.get(agentId);
         const intention = intentions.find((i) => !this.isAlreadyActiveIntention(agentId, i));
         
@@ -55,7 +50,7 @@ class Coordinator {
         return intention;
     }
 
-    setIntentionStatus(intention, status) {
+    static setIntentionStatus(intention, status) {
         for (const agentId of this.coordinatedActions.keys()) {
             const intentions = this.coordinatedActions.get(agentId);
             const intentionIndex = intentions.findIndex((i) => i.equals(intention));
@@ -66,7 +61,12 @@ class Coordinator {
         this.allIntentions[intentionIndex].isActive = status;
     }
 
-    removeCompletedIntention(intention) {
+    static shiftAgentIntentions(agentId) {
+        const intentions = this.coordinatedActions.get(agentId);
+        intentions.shift();
+    }
+
+    static removeCompletedIntention(intention) {
         for (const agentId of this.coordinatedActions.keys()) {
             const intentions = this.coordinatedActions.get(agentId);
             const intentionIndex = intentions.findIndex((i) => i.equals(intention));
@@ -77,7 +77,7 @@ class Coordinator {
         this.allIntentions.splice(intentionIndex, 1);
     }
 
-    coordinateIntentions() {
+    static coordinateIntentions() {
         // Merge the intention queues from both agents into a single array
         for (const [agentId, intentions] of this.coordinatedActions.entries()) {
             allIntentions.push(
@@ -95,7 +95,7 @@ class Coordinator {
         }
     }
     
-    selectActions(sortedIntentions, agentId) {
+    static selectActions(sortedIntentions, agentId) {
         const selectedActions = [];
     
         for (const sortedIntention of sortedIntentions) {
@@ -108,7 +108,6 @@ class Coordinator {
                 this.checkInterference(sortedIntention.intention, selectedAction.intention)
             );
 
-            // If there is no interference, select the action
             if (!isInterference) {
                 selectedActions.push(intention);
             }
@@ -117,9 +116,44 @@ class Coordinator {
         return selectedActions.sort((a, b) => b.intention.gain - a.intention.gain);
     }
     
-    checkInterference(intentionA, intentionB) {
-        // Implement logic to check interference between two intentions
-        // TODO: check also if paths to intentions intersect
-        return intentionA.tile === intentionB.tile;
+    static checkInterference(intentionA, intentionB) {
+        if (intentionA.tile === intentionB.tile) {
+            return true;
+        }
+
+        const pathToA = Me.pathTo(intentionA.tile);
+        const pathToB = Me.pathTo(intentionB.tile);
+
+        if (pathToA.status !== "success" || pathToB.status !== "success") {
+            return false;
+        }
+
+        const existsIntersection = this.checkPathIntersection(pathToA.path, pathToB.path);
+
+        return existsIntersection;
+    }
+
+    static checkPathIntersection(pathA, pathB) {
+        const visitedTiles = new Set();
+        let existsIntersection = false;
+
+        // Iterate over the objects in the first path and mark the tiles as visited
+        for (const tile of pathA) {
+            const key = `${tile.x},${tile.y}`;
+            visitedTiles.add(key);
+        }
+
+        // Iterate over the objects in the second path and check if any tile is already visited
+        for (const tile of pathB) {
+            const key = `${tile.x},${tile.y}`;
+ 
+            if (visitedTiles.has(key)) {
+                // Paths intersect, common tile found
+                existsIntersection = true;
+                break;
+            }
+        }
+
+        return existsIntersection;
     }
 }

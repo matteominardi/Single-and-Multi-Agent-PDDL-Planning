@@ -56,14 +56,15 @@ setTimeout(async () => {
         Coordinator.addAgentIntentions(agentId, Intentions.queue);
         Coordinator.coordinateIntentions();
         
-        // let target = Intentions.getBestIntention();
         let target = Coordinator.getBestCoordinatedIntention(agentId);
         console.log(agentId, "new target", target.tile.x, target.tile.y, target.gain);
         
         if (failed && target.equals(previousTarget)) {
             console.log(agentId, "swapping");
-            Intentions.queue.shift();
-            target = Intentions.getBestIntention();
+
+            Coordinator.shiftAgentIntentions(agentId);
+            target = Coordinator.getBestCoordinatedIntention(agentId);
+            
             failed = false;
         } 
         
