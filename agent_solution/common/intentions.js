@@ -80,7 +80,6 @@ class Intentions {
 
         const path = Me.pathTo(this.requestedIntention.tile);
         if (path.status === "success") {
-            // seguo il path
             const actions = computeActions(path.path);
             let failed = false;
 
@@ -96,41 +95,17 @@ class Intentions {
                 }
             }
 
-            // if (actions.length === 0) {
+            if (this.shouldStop) {
+                console.log(BeliefSet.getMe().id, "stopped before reaching target", this.requestedIntention.tile);
+                this.shouldStop = false;
+                return;
+            }
+            
             if (!failed) {
+                console.log(BeliefSet.getMe().id, "target tile reached!");      
+                await BeliefSet.getMe().performAction();
                 this.success = true;
             }
-
-            // if (!this.shouldStop) {
-            let currentTile = BeliefSet.getMe().getMyPosition();
-            console.log("currentTile", currentTile.x, currentTile.y, currentTile.type)
-            console.log("my reward ", BeliefSet.getMyReward(), "getCarriedByMe", BeliefSet.getCarriedByMe().length)
-            let perceivedParcels = Array.from(BeliefSet.getParcels());
-            console.log("perceivedParcels", perceivedParcels.length, perceivedParcels)
-            if (currentTile.type === TileType.DELIVERY && BeliefSet.getCarriedByMe().length > 0) {
-                await BeliefSet.getMe().do_action(client, Actions.PUT_DOWN);
-                BeliefSet.emptyCarriedByMe();
-            } else if (currentTile.type === TileType.NORMAL) {
-                for (let parcel in perceivedParcels) {
-                    if (BeliefSet.shouldConsiderParcel(perceivedParcels[parcel].id) &&
-                        perceivedParcels[parcel].carriedBy === null && 
-                        perceivedParcels[parcel].x === currentTile.x && 
-                        perceivedParcels[parcel].y === currentTile.y) { 
-                        console.log("Trying to pick up", perceivedParcels[parcel])
-                        await BeliefSet.getMe().do_action(client, Actions.PICKUP);
-                        
-                        BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
-                        this.queue = this.queue.filter(
-                            (d) => (d.parcel ? d.parcel.id !== perceivedParcels[parcel].id : true),
-                        );
-                        break;
-                    }
-                }
-            }
-            this.queue = this.queue.filter(
-                (d) => d.tile !== currentTile && d.gain > 0 && (d.parcel ? d.parcel.reward > 0 : true),
-            );
-            // }
         } else {
             throw "Path not found";
         }

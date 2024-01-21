@@ -97,10 +97,9 @@ class Intentions {
             }
 
             if (!failed) {
+                await BeliefSet.getMe().performAction();
                 this.success = true;
             }
-
-            await BeliefSet.getMe().performAction();
         } else {
             throw "Path not found";
         }
