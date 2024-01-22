@@ -2,6 +2,55 @@ import aStar from "a-star";
 import BeliefSet from "./belief.js";
 import Me, { Actions } from "./me.js";
 
+async function mySolver(
+    pddlDomain,
+    pddlProblem,
+    remote_url = "http://localhost:5001",
+    planner = "optic",
+) {
+    // console.log("problem", pddlProblem);
+    try {
+        let ask = await fetch(`${remote_url}/package/${planner}/solve`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                persistent: "true",
+            },
+            body: JSON.stringify({ domain: pddlDomain, problem: pddlProblem }),
+        });
+        ask = await ask.json();
+
+        let plan = await fetch(`${remote_url}${ask.result}`);
+        plan = await plan.json();
+        while (plan.status === "PENDING") {
+            await sleep(1000);
+            plan = await fetch(`${remote_url}${ask.result}`);
+            plan = await plan.json();
+        }
+        plan = await plan.result.output.plan;
+        // keep everything after ";;;; Solution Found"
+        if (plan.includes(";;;; Solution Found")) {
+            plan = await plan.split(";;;; Solution Found")[1];
+        } else {
+            return [];
+        }
+        plan = await plan.split("\n");
+        // keep only the lines that contains (
+        plan = await plan.filter((line) => line.includes("("));
+        // keep only the part between parentheses
+        plan = await plan.map((line) => {
+            const start = line.indexOf("(");
+            const end = line.indexOf(")");
+            return line.slice(start + 1, end).split(" ")[0];
+        });
+        // remove move_ prefix
+        plan = await plan.map((line) => line.replace("move_", ""));
+        return await plan;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 function getPath(start) {
     const options = {
         start: start,
@@ -58,9 +107,10 @@ function computeParcelGain(parcel) {
     let score = 0;
 
     const gonnaCarry = BeliefSet.getCarriedByMe().length + 1; // me + parcel
-    const factor = 0.01 +
+    const factor =
+        0.01 +
         BeliefSet.getConfig().MOVEMENT_DURATION /
-        BeliefSet.getConfig().PARCEL_DECADING_INTERVAL;
+            BeliefSet.getConfig().PARCEL_DECADING_INTERVAL;
     const parcelDistance = distanceBetween(
         BeliefSet.getMe().getMyPosition(),
         BeliefSet.getMap().getTile(parcel.x, parcel.y),
@@ -81,9 +131,10 @@ function computeDeliveryGain(deliverySpot) {
     let score = 0;
 
     const gonnaCarry = BeliefSet.getCarriedByMe().length;
-    const factor = 0.01 +
+    const factor =
+        0.01 +
         BeliefSet.getConfig().MOVEMENT_DURATION /
-        BeliefSet.getConfig().PARCEL_DECADING_INTERVAL;
+            BeliefSet.getConfig().PARCEL_DECADING_INTERVAL;
     const distance = distanceBetween(
         BeliefSet.getMe().getMyPosition(),
         deliverySpot,
@@ -96,4 +147,13 @@ function computeDeliveryGain(deliverySpot) {
 
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
-export { getPath, isEnd, distanceBetween, computeActions, computeParcelGain, computeDeliveryGain, sleep };
+export {
+    mySolver,
+    getPath,
+    isEnd,
+    distanceBetween,
+    computeActions,
+    computeParcelGain,
+    computeDeliveryGain,
+    sleep,
+};

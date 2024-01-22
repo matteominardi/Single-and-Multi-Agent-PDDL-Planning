@@ -4,7 +4,7 @@ import Me from "./me.js";
 import { Parcels } from "./parcel.js";
 import { TileMap } from "./world.js";
 import Config from "./config.js";
-import { PddlProblem } from "@unitn-asa/pddl-client"
+import { PddlProblem } from "@unitn-asa/pddl-client";
 
 class BeliefSet {
     static perceivedParcels = new Parcels();
@@ -136,46 +136,60 @@ class BeliefSet {
     static toPddl(target) {
         let objects = [];
         const mapPddl = this.getMap().toPddl(); // it is a map of xiyj to array of strings
+        // console.log(mapPddl);
         const agentsPddl = this.getAgents().getAll();
-        agentsPddl.forEach(function (agent, key, map) {
+        agentsPddl.forEach(function (key) {
             const infos = mapPddl.get(key);
-            // search string that starts with (available and replace it with 
+            // search string that starts with (available and replace it with
             // `(not (available x${i}y${j}))`
-            const available = infos.find((info) => info.startsWith("(available"));
+            const available = infos.find((info) =>
+                info.startsWith("(available"),
+            );
             const index = infos.indexOf(available);
             infos[index] = `(not ${available})`;
             mapPddl.set(key, infos);
         });
-        
+
         const parcelsPddl = this.getParcels().toPddl();
-        parcelsPddl.forEach(function(parcel, key, map) {
+        parcelsPddl.forEach(function (parcel, key, map) {
             // iterate over parcel and search the one that starts with (parcel, take everything until the end-1
-            const parcelInfo = parcel.find((info) => info.startsWith("(parcel"));
+            const parcelInfo = parcel.find((info) =>
+                info.startsWith("(parcel"),
+            );
             // get everything after the first space and before the last )
             const parcelInfoIndex = parcel.indexOf(parcelInfo);
             let parcelInfoId = parcel[parcelInfoIndex];
-            parcelInfoId = parcelInfoId.substring(parcelInfoId.indexOf(" ") + 1, parcelInfoId.lastIndexOf(")"));
-            objects.push(`(parcel ${parcelInfoId})`);
+            parcelInfoId = parcelInfoId.substring(
+                parcelInfoId.indexOf(" ") + 1,
+                parcelInfoId.lastIndexOf(")"),
+            );
+            objects.push(`${parcelInfoId}`);
             let infos = mapPddl.get(key);
             infos = infos.concat(parcel);
             mapPddl.set(key, infos);
         });
 
         const mePddl = this.getMe().toPddl();
-        
+
         let init = [];
         init = init.concat(mePddl);
-        objects.push((`(self ${this.getMe().id})`));
+        objects.push(`me${this.getMe().id}`);
 
         mapPddl.forEach(function (infos, key, map) {
-            objects.push(`(tile ${key})`);
+            objects.push(`${key}`);
             init = init.concat(infos);
         });
 
-        const goal = `(at ${this.getMe().id} x${target.tile.x}y${target.tile.y})`;
+        const goal = `at me${this.getMe().id} x${target.tile.x}y${
+            target.tile.y
+        }`;
 
-        const problemPddl = new PddlProblem("prova", objects.join(" "), init.join(" "), goal);
-        problemPddl.saveToFile();
+        const problemPddl = new PddlProblem(
+            "prova",
+            objects.join(" "),
+            init.join(" "),
+            goal,
+        );
 
         return problemPddl;
     }

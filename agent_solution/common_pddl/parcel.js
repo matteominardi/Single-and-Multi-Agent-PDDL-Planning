@@ -72,10 +72,10 @@ class Parcels extends Set {
             let currentParcel = [];
             currentParcel.push(`(parcel ${p.id})`);
             if (p.carriedBy !== null) {
-                currentParcel.push(`(carries ${p.carriedBy} x${p.x}y${p.y})`);
+                currentParcel.push(`(carries me${p.carriedBy} x${p.x}y${p.y})`);
             }
             currentParcel.push(`(at ${p.id} x${p.x}y${p.y})`);
-            
+
             pddl.set(`x${p.x}y${p.y}`, currentParcel);
         }
         return pddl;

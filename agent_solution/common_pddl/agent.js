@@ -23,6 +23,8 @@ class Agents extends Set {
         if (agent instanceof Agent) {
             this.add(agent);
         } else {
+            agent.x = parseInt(agent.x);
+            agent.y = parseInt(agent.y);
             let newAgent = new Agent(
                 agent.id,
                 agent.name,
@@ -44,15 +46,17 @@ class Agents extends Set {
     }
 
     getAll() {
-        return Array.from(this);
+        return Array.from(this).map((agent) => {
+            return `x${agent.x}y${agent.y}`;
+        });
     }
 
     updateAgent(newAgent) {
         for (let agent of this) {
             if (agent.id === newAgent.id) {
                 agent.name = newAgent.name;
-                agent.x = newAgent.x;
-                agent.y = newAgent.y;
+                agent.x = parseInt(newAgent.x);
+                agent.y = parseInt(newAgent.y);
                 agent.score = newAgent.score;
                 return;
             }

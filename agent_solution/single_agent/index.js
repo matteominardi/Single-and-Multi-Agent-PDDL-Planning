@@ -35,23 +35,27 @@ setTimeout(async () => {
         Intentions.filterGains();
 
         let perceivedParcels = Array.from(BeliefSet.getParcels());
-        console.log("perceivedParcels", perceivedParcels.length, perceivedParcels)
-        
+        console.log(
+            "perceivedParcels",
+            perceivedParcels.length,
+            perceivedParcels,
+        );
+
         let options = Desires.computeDesires();
         Intentions.add(options);
         Intentions.sort();
-        console.log("queue", Intentions.queue.length, Intentions.queue)
+        console.log("queue", Intentions.queue.length, Intentions.queue);
         let target = Intentions.getBestIntention();
         console.log("new target", target.tile.x, target.tile.y, target.gain);
-        
+
         if (failed && target.equals(previousTarget)) {
             console.log("swapping");
             Intentions.queue.shift();
             target = Intentions.getBestIntention();
             failed = false;
-        } 
+        }
         // else if (previousTarget && !target.equals(previousTarget) && target.gain > previousTarget.gain) {
-        //     console.log("changing ", previousTarget.tile.x, previousTarget.tile.y, previousTarget.gain, 
+        //     console.log("changing ", previousTarget.tile.x, previousTarget.tile.y, previousTarget.gain,
         //                 "with ", target.tile.x, target.tile.y, target.gain);
         //     Intentions.stop();
         // }
@@ -60,7 +64,7 @@ setTimeout(async () => {
             if (!patrolling && target.gain <= 1) {
                 console.log("started patrolling");
                 patrolling = true;
-            } else if (patrolling && target.gain <=1) {
+            } else if (patrolling && target.gain <= 1) {
                 console.log("patrolling");
             } else if (patrolling && target.gain > 1) {
                 console.log("stopped patrolling");
@@ -70,13 +74,12 @@ setTimeout(async () => {
 
         if (!previousTarget || !patrolling) {
             previousTarget = target;
-        } 
+        }
         // else if (patrolling) {
         //     target = previousTarget;
         // }
         Intentions.requestedIntention = target;
 
-        // TODO: create loop with subloop for each action in place, so an action can be stopped from the outside, stopping the intention and making it possible to swap it with new ones
         // if (currentIntention === null || Intentions.success) {
         //     currentIntention = target;
         // } else if (currentIntention.gain < target.gain) {
@@ -84,15 +87,16 @@ setTimeout(async () => {
         //     currentIntention = target;
         // }
 
-
-        await Intentions.achieve(client).then(() => {
-            // if (Intentions.shouldStop) {
-            //     failed = true;
-            // }
-        }).catch(error => {
-            console.log("Failed intention", error);
-            failed = true;
-        });
+        await Intentions.achieve(client)
+            .then(() => {
+                // if (Intentions.shouldStop) {
+                //     failed = true;
+                // }
+            })
+            .catch((error) => {
+                console.log("Failed intention", error);
+                failed = true;
+            });
 
         // if (failed && Intentions.queue.length > 1) {
         //     console.log("swapping");
@@ -101,7 +105,7 @@ setTimeout(async () => {
         //     // console.log(Intentions.queue[0], Intentions.queue[1]);
         // } else if (Intentions.queue.length == 0) {
         //     console.log("patrolling");
-  
+
         // } else {
         //     console.log("passing into the next intention");
         //     Intentions.queue.shift();

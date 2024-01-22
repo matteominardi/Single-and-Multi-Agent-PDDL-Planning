@@ -63,26 +63,35 @@ class TileMap {
                 const tile = this.tiles[i][j];
                 let currentTile = [];
 
-                currentTile.push(`(tile x${i}y${j})`)
+                currentTile.push(`(tile x${i}y${j})`);
 
-                if (tile.type === TileType.DELIVERY) {
-                    currentTile.push(`(delivery x${i}y${j})`)
-                } else if (tile.type === TileType.NORMAL) {
-                    currentTile.push(`(available x${i}y${j})`)
+                if (
+                    tile.type === TileType.NORMAL ||
+                    tile.type === TileType.DELIVERY
+                ) {
+                    currentTile.push(`(available x${i}y${j})`);
                 } else {
-                    currentTile.push(`(not (available x${i}y${j}))`)
+                    currentTile.push(`(not (available x${i}y${j}))`);
                 }
-                
+
                 const neighbours = this.getNeighbours(tile);
                 neighbours.forEach((neighbour) => {
                     if (neighbour.x > tile.x) {
-                        currentTile.push(`(right x${neighbour.x}y${neighbour.y} x${i}y${j})`);
+                        currentTile.push(
+                            `(right x${neighbour.x}y${neighbour.y} x${i}y${j})`,
+                        );
                     } else if (neighbour.x < tile.x) {
-                        currentTile.push(`(left x${neighbour.x}y${neighbour.y} x${i}y${j})`);
+                        currentTile.push(
+                            `(left x${neighbour.x}y${neighbour.y} x${i}y${j})`,
+                        );
                     } else if (neighbour.y > tile.y) {
-                        currentTile.push(`(up x${neighbour.x}y${neighbour.y} x${i}y${j})`);
+                        currentTile.push(
+                            `(up x${neighbour.x}y${neighbour.y} x${i}y${j})`,
+                        );
                     } else if (neighbour.y < tile.y) {
-                        currentTile.push(`(down x${neighbour.x}y${neighbour.y} x${i}y${j})`);
+                        currentTile.push(
+                            `(down x${neighbour.x}y${neighbour.y} x${i}y${j})`,
+                        );
                     }
                 });
 
@@ -160,4 +169,3 @@ class TileMap {
 }
 
 export { Tile, TileMap, TileType };
-

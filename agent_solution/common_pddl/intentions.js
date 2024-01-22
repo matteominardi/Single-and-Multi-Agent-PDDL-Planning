@@ -1,7 +1,8 @@
 import BeliefSet from "./belief.js";
-import { computeActions, computeDeliveryGain, computeParcelGain } from "./helpers.js";
-import Me, { Actions } from "./me.js";
+import { computeDeliveryGain, computeParcelGain, mySolver } from "./helpers.js";
+import { Actions } from "./me.js";
 import { TileType } from "./world.js";
+import Desires from "./desires.js";
 
 class Intention {
     constructor(desire) {
@@ -23,8 +24,10 @@ class Intentions {
     static add(desires) {
         for (let desire of desires) {
             // check if the same tile is already in the queue, and update the gain
-            const existingDesireIndex = this.queue.findIndex(d => d.tile.equals(desire.tile));
-            
+            const existingDesireIndex = this.queue.findIndex((d) =>
+                d.tile.equals(desire.tile),
+            );
+
             if (existingDesireIndex !== -1) {
                 this.queue[existingDesireIndex].gain = desire.gain;
             } else {
@@ -43,7 +46,7 @@ class Intentions {
         this.queue = [];
     }
 
-    static decayGains() {        
+    static decayGains() {
         for (let intention of this.queue) {
             if (intention.parcel) {
                 intention.gain = computeParcelGain(intention.parcel);
@@ -56,52 +59,101 @@ class Intentions {
     }
 
     static filterGains() {
-        this.queue = this.queue.filter(
-            (d) => d.gain > 0,
-        );
+        this.queue = this.queue.filter((d) => d.gain > 0);
     }
 
     static getBestIntention() {
         return new Intention(this.queue[0]);
     }
 
-    static async achieve(client) {
-        if (this.shouldStop) {
-            console.log("exiting");
-            this.shouldStop = false;
-            return;
-        }
-        
+    static async achieve(client, domain, problem) {
+        const actions = await mySolver(domain, problem);
+        const current_intention = Intentions.requestedIntention;
+        while (actions.length > 0 && !this.shouldStop) {
+            // if ((await actions.length) > 0) {
+            const action = await actions.shift();
 
-        const path = Me.pathTo(this.requestedIntention.tile);
-        if (path.status === "success") {
-            const actions = computeActions(path.path);
-            let failed = false;
+            let options = Desires.computeDesires();
+            Intentions.add(options);
+            Intentions.sort();
 
-            // while (actions.length > 0 && !this.shouldStop) {
-            if (actions.length > 0 && !this.shouldStop) {
-                const action = actions.shift();
-                try {
-                    await BeliefSet.getMe().do_action(client, action);
-                } catch (err) {
-                    console.log(err);
-                    failed = true;
-                    throw err;
-                }
-            }
+            const new_intention = this.getBestIntention();
 
-            if (this.shouldStop) {
-                console.log(BeliefSet.getMe().id, "stopped before reaching target", this.requestedIntention.tile);
-                this.shouldStop = false;
+            if (
+                current_intention.gain < new_intention.gain &&
+                !current_intention.tile.equals(new_intention.tile)
+            ) {
+                console.log("New intention found");
                 return;
             }
 
-            if (!failed) {
-                await BeliefSet.getMe().performAction();
-                this.success = true;
+            try {
+                await BeliefSet.getMe().do_action(client, await action);
+            } catch (err) {
+                console.log(err);
+                throw err;
             }
-        } else {
-            throw "Path not found";
+
+            let currentTile = await BeliefSet.getMe().getMyPosition();
+            console.log(
+                "currentTile",
+                await currentTile.x,
+                await currentTile.y,
+                await currentTile.type,
+            );
+            console.log(
+                "my reward ",
+                BeliefSet.getMyReward(),
+                "getCarriedByMe",
+                BeliefSet.getCarriedByMe().length,
+            );
+            let perceivedParcels = Array.from(BeliefSet.getParcels());
+            console.log(
+                "perceivedParcels",
+                perceivedParcels.length,
+                perceivedParcels,
+            );
+            if (
+                currentTile.type === TileType.DELIVERY &&
+                BeliefSet.getCarriedByMe().length > 0
+            ) {
+                await BeliefSet.getMe().do_action(client, Actions.PUT_DOWN);
+                BeliefSet.emptyCarriedByMe();
+            } else if (currentTile.type === TileType.NORMAL) {
+                for (let parcel in perceivedParcels) {
+                    if (
+                        BeliefSet.shouldConsiderParcel(
+                            perceivedParcels[parcel].id,
+                        ) &&
+                        perceivedParcels[parcel].carriedBy === null &&
+                        perceivedParcels[parcel].x === currentTile.x &&
+                        perceivedParcels[parcel].y === currentTile.y
+                    ) {
+                        console.log(
+                            "Trying to pick up",
+                            perceivedParcels[parcel],
+                        );
+                        await BeliefSet.getMe().do_action(
+                            client,
+                            Actions.PICKUP,
+                        );
+
+                        BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
+                        this.queue = this.queue.filter((d) =>
+                            d.parcel
+                                ? d.parcel.id !== perceivedParcels[parcel].id
+                                : true,
+                        );
+                        break;
+                    }
+                }
+            }
+            this.queue = this.queue.filter(
+                (d) =>
+                    d.tile !== currentTile &&
+                    d.gain > 0 &&
+                    (d.parcel ? d.parcel.reward > 0 : true),
+            );
         }
     }
 
