@@ -1,36 +1,49 @@
 class Coordinator {
-    static coordinatedActions = new Map();
+    static agents = new Set();
     static allIntentions = [];
 
     static hasAgent(agentId) {
-        return this.coordinatedActions.has(agentId);
+        return this.agents.has(agentId);
     }
 
     static addAgent(agentId) {
-        this.coordinatedActions.set(agentId, []);
+        this.agents.add(agentId);
     }
 
     static addAgentIntentions(agentId, intentions) {
-        this.coordinatedActions.set(agentId, intentions);
+        for (const intention of intentions) {
+            const intentionIndex = this.allIntentions.findIndex(
+                (i) => i.agentId === agentId && i.intention.equals(intention)
+            );
+            
+            if (intentionIndex === -1) {
+                this.allIntentions.push({ agentId: agentId, intention: intention, isActive: false });
+            } else {
+                this.allIntentions[intentionIndex].intention.gain = intention.gain;
+            }
+        }
+
+        this.allIntentions.sort((a, b) => b.intention.gain - a.intention.gain);
     }
     
-    static getCoordinatedIntentions(agentId) {
-        return this.coordinatedActions.get(agentId);
+    static getAgentIntentions(agentId) {
+        return this.allIntentions.filter((i) => i.agentId === agentId);
     }
 
     static isAlreadyActiveIntention(agentId, intention) {
         let isActive = false;
         
-        for (const otherAgentId of this.coordinatedActions.keys()) {
+        for (const otherAgentId of this.agents) {
             if (otherAgentId === agentId) {
                 continue;
             }
 
-            const intentions = this.coordinatedActions.get(otherAgentId);
-            const intentionIndex = intentions.findIndex((i) => i.equals(intention));
+            const intentionIndex = this.allIntentions.findIndex(
+                (i) => i.agentId === otherAgentId && i.equals(intention)
+            );
             
             if (intentionIndex !== -1) {
-                isActive = isActive || intentions[intentionIndex].isActive;
+                isActive = isActive || this.allIntentions[intentionIndex].isActive;
             }
 
             if (isActive) {
@@ -42,8 +55,9 @@ class Coordinator {
     }
 
     static getBestCoordinatedIntention(agentId) {
-        const intentions = this.coordinatedActions.get(agentId);
-        const intention = intentions.find((i) => !this.isAlreadyActiveIntention(agentId, i));
+        const intention = this.allIntentions.find(
+            (i) => i.isActive === false && i.agentId === agentId && !this.isAlreadyActiveIntention(agentId, i)
+        );
         
         setIntentionStatus(intention, true);
         
@@ -51,61 +65,60 @@ class Coordinator {
     }
 
     static setIntentionStatus(intention, status) {
-        for (const agentId of this.coordinatedActions.keys()) {
-            const intentions = this.coordinatedActions.get(agentId);
-            const intentionIndex = intentions.findIndex((i) => i.equals(intention));
-            intentions[intentionIndex].isActive = status;
+        for (const agentId of this.agents) {
+            const intentionIndex = this.allIntentions.findIndex(
+                (i) => i.agentId === agentId && i.equals(intention)
+            );
+            
+            if (intentionIndex !== -1) {
+                this.allIntentions[intentionIndex].isActive = status;
+            }
         }
-
-        const intentionIndex = this.allIntentions.findIndex((i) => i.equals(intention));
-        this.allIntentions[intentionIndex].isActive = status;
     }
 
     static shiftAgentIntentions(agentId) {
-        const intentions = this.coordinatedActions.get(agentId);
-        intentions.shift();
+        const intentionIndex = this.allIntentions.findIndex((i) => i.agentId === agentId);
+        
+        if (intentionIndex !== -1) {
+            this.allIntentions.splice(intentionIndex, 1);
+        }
     }
 
     static removeCompletedIntention(intention) {
-        for (const agentId of this.coordinatedActions.keys()) {
-            const intentions = this.coordinatedActions.get(agentId);
-            const intentionIndex = intentions.findIndex((i) => i.equals(intention));
-            intentions.splice(intentionIndex, 1);
+        for (const agentId of this.agents) {
+            const intentionIndex = this.allIntentions.findIndex(
+                (i) => i.agentId === agentId && i.equals(intention)
+            );
+            
+            if (intentionIndex !== -1) {
+                this.allIntentions.splice(intentionIndex, 1);
+            }
         }
-
-        const intentionIndex = this.allIntentions.findIndex((i) => i.equals(intention));
-        this.allIntentions.splice(intentionIndex, 1);
     }
 
     static coordinateIntentions() {
-        // Merge the intention queues from both agents into a single array
-        for (const [agentId, intentions] of this.coordinatedActions.entries()) {
-            allIntentions.push(
-                ...intentions.map((intention) => ({ agentId: agentId, intention: intention, isActive: false }))
-            );
+        // Keep actions with the highest gain for each agent without interference
+        for (const agentId of this.agents) {
+            this.allIntentions = this.selectActions(this.allIntentions, agentId);
         }
-    
-        // Sort the merged intentions by gain in descending order
-        const sortedIntentions = allIntentions.sort((a, b) => b.intention.gain - a.intention.gain);
-    
-        // Select actions with the highest gain for each agent without interference
-        for (const agentId of this.agents.keys()) {
-            const selectedActions = this.selectActions(sortedIntentions, agentId);
-            this.coordinatedActions.set(agentId, selectedActions);
-        }
+
+        this.allIntentions = this.allIntentions.sort((a, b) => b.intention.gain - a.intention.gain);
     }
     
-    static selectActions(sortedIntentions, agentId) {
+    static selectActions(allIntentions, agentId) {
         const selectedActions = [];
     
-        for (const sortedIntention of sortedIntentions) {
-            if (sortedIntention.agentId !== agentId || sortedIntention.isActive) {
+        for (const intention of allIntentions) {
+            if (intention.agentId !== agentId || intention.isActive) {
                 continue;
             }
 
-            // Check if the action interferes with any selected action
-            const isInterference = selectedActions.some((selectedAction) =>
-                this.checkInterference(sortedIntention.intention, selectedAction.intention)
+            // Check if the action interferes with any active action
+            const isInterference = allIntentions.some((selectedAction) =>
+                !selectedAction.equals(intention) && 
+                selectedAction.isActive &&
+                selectedAction.agentId !== agentId && 
+                this.checkInterference(intention.intention, selectedAction.intention)
             );
 
             if (!isInterference) {
@@ -113,7 +126,7 @@ class Coordinator {
             }
         }
     
-        return selectedActions.sort((a, b) => b.intention.gain - a.intention.gain);
+        return selectedActions;
     }
     
     static checkInterference(intentionA, intentionB) {
