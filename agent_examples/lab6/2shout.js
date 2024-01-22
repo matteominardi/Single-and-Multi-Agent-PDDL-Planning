@@ -6,7 +6,7 @@ const client = new DeliverooApi(
 )
 await new Promise( res => client.onYou( res ) );
 
-await client.shout( process.argv[2] || 'hello everyone' );
+await client.shout(process.argv[2] || 'hello everyone');
 
 process.exit();
 

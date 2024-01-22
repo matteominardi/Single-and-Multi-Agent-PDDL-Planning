@@ -59,7 +59,9 @@ class Coordinator {
             (i) => i.isActive === false && i.agentId === agentId && !this.isAlreadyActiveIntention(agentId, i)
         );
         
-        setIntentionStatus(intention, true);
+        if (intention) {
+            setIntentionStatus(intention, true);
+        }
         
         return intention;
     }
@@ -99,7 +101,8 @@ class Coordinator {
     static coordinateIntentions() {
         // Keep actions with the highest gain for each agent without interference
         for (const agentId of this.agents) {
-            this.allIntentions = this.selectActions(this.allIntentions, agentId);
+            let agentIntentions = this.selectActions(this.allIntentions, agentId);
+            this.allIntentions = this.allIntentions.concat(agentIntentions);
         }
 
         this.allIntentions = this.allIntentions.sort((a, b) => b.intention.gain - a.intention.gain);

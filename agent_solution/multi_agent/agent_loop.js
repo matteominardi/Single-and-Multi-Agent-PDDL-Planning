@@ -23,6 +23,7 @@ client.onParcelsSensing((parcels) => updateParcels(parcels));
 client.onAgentsSensing((agents) => updateAgents(agents));
 client.onYou((me) => updateMe(me));
 client.onConfig((config) => updateConfig(config));
+client.onMsg((msg) => console.log("MSG", msg));
 
 let previousTarget = null;
 let patrolling = false;
@@ -91,7 +92,7 @@ setTimeout(async () => {
         }).catch(error => {
             console.log("Failed intention", error);
             failed = true;
-            Coordinator.setInactiveIntention(agentId, target);
+            Coordinator.setIntentionStatus(target, false);
         });
         console.log("---------------------------------------------------");
         await sleep(100);
