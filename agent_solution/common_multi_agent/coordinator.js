@@ -92,7 +92,7 @@ class Coordinator {
                 this.shouldConsiderParcel(p.id) &&
                 p.carriedBy === null
             ) {
-                let score = computeParcelGain(agentId, p);
+                let score = this.computeParcelGain(agentId, p);
 
                 if (score > 0) {
                     options.push(
@@ -114,7 +114,7 @@ class Coordinator {
         const deliverySpots = this.getMap().getDeliverySpots();
 
         for (let d in deliverySpots) {
-            let score = computeDeliveryGain(deliverySpots[d]);
+            let score = this.computeDeliveryGain(deliverySpots[d]);
 
             if (score > 0) {
                 options.push(
@@ -402,4 +402,4 @@ class Coordinator {
     }
 }
 
-export default BeliefSet;
+export default Coordinator;

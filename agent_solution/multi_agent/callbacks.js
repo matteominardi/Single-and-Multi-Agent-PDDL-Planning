@@ -109,7 +109,8 @@ function updateAgents(agents) {
 }
 
 function initMap(width, height, tiles) {
-    BeliefSet.initMap(width, height, tiles);
+    // BeliefSet.initMap(width, height, tiles);
+    Coordinator.initMap(width, height, tiles);
     console.log("Map initialized!");
     // for (let tile of tiles) {
     //         myBeliefset.declare("tile " + tile.x + "_" + tile.y);
