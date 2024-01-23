@@ -68,7 +68,21 @@ class Intentions {
     }
 
     static async achieve(client, domain, problem) {
+        const perceivedAgents = BeliefSet.getAgents();
+        
         let [actions, tiles] = await mySolver(domain, problem);
+
+        const existsIntersection = tiles.some((tile) =>
+            perceivedAgents.some((agent) => agent.x === tile.x && agent.y === tile.y),
+        );
+
+        if (existsIntersection) {
+            console.log(BeliefSet.getMe().id, "path blocked by another agent");
+            this.success = false;
+            // throw "path blocekd";
+            return;
+        }
+        
         console.log(await tiles);
         const current_intention = Intentions.requestedIntention;
         while (actions.length > 0 && !this.shouldStop) {
@@ -95,67 +109,12 @@ class Intentions {
                 console.log(err);
                 throw err;
             }
+            
+            await BeliefSet.getMe().performAction();
+        }
 
-            let currentTile = await BeliefSet.getMe().getMyPosition();
-            console.log(
-                "currentTile",
-                await currentTile.x,
-                await currentTile.y,
-                await currentTile.type,
-            );
-            console.log(
-                "my reward ",
-                BeliefSet.getMyReward(),
-                "getCarriedByMe",
-                BeliefSet.getCarriedByMe().length,
-            );
-            let perceivedParcels = Array.from(BeliefSet.getParcels());
-            console.log(
-                "perceivedParcels",
-                perceivedParcels.length,
-                perceivedParcels,
-            );
-            if (
-                currentTile.type === TileType.DELIVERY &&
-                BeliefSet.getCarriedByMe().length > 0
-            ) {
-                await BeliefSet.getMe().do_action(client, Actions.PUT_DOWN);
-                BeliefSet.emptyCarriedByMe();
-            } else if (currentTile.type === TileType.NORMAL) {
-                for (let parcel in perceivedParcels) {
-                    if (
-                        BeliefSet.shouldConsiderParcel(
-                            perceivedParcels[parcel].id,
-                        ) &&
-                        perceivedParcels[parcel].carriedBy === null &&
-                        perceivedParcels[parcel].x === currentTile.x &&
-                        perceivedParcels[parcel].y === currentTile.y
-                    ) {
-                        console.log(
-                            "Trying to pick up",
-                            perceivedParcels[parcel],
-                        );
-                        await BeliefSet.getMe().do_action(
-                            client,
-                            Actions.PICKUP,
-                        );
-
-                        BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
-                        this.queue = this.queue.filter((d) =>
-                            d.parcel
-                                ? d.parcel.id !== perceivedParcels[parcel].id
-                                : true,
-                        );
-                        break;
-                    }
-                }
-            }
-            this.queue = this.queue.filter(
-                (d) =>
-                    d.tile !== currentTile &&
-                    d.gain > 0 &&
-                    (d.parcel ? d.parcel.reward > 0 : true),
-            );
+        if (!this.shouldStop) {
+            this.success = true;
         }
     }
 

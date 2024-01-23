@@ -80,6 +80,19 @@ class Intentions {
 
         const path = Me.pathTo(this.requestedIntention.tile);
         if (path.status === "success") {
+            const perceivedAgents = BeliefSet.getAgents();
+
+            const existsIntersection = path.path.some((tile) =>
+                perceivedAgents.some((agent) => agent.x === tile.x && agent.y === tile.y),
+            );
+
+            if (existsIntersection) {
+                console.log(BeliefSet.getMe().id, "path blocked by another agent");
+                this.success = false;
+                // throw "path blocekd";
+                return;
+            }
+            
             const actions = computeActions(path.path);
             let failed = false;
 
@@ -98,6 +111,7 @@ class Intentions {
             if (this.shouldStop) {
                 console.log(BeliefSet.getMe().id, "stopped before reaching target", this.requestedIntention.tile);
                 this.shouldStop = false;
+                this.success = false;
                 return;
             }
             

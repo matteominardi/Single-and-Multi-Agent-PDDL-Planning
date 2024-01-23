@@ -1,25 +1,253 @@
+import { Parcels } from "./parcel.js";
+import { TileMap } from "./world.js";
+import Config from "./config.js";
+
 class Coordinator {
-    static agents = new Set();
-    static allIntentions = [];
+    static map = null;
+    static agents = new Map(); // used to store the position of the known agents
+    static ignoredParcels = new Parcels(); // used to store the parcels that should not be considered anymore
+    static allPerceivedParcels = []; // used to store all the perceived parcels by all agents
+    static allPerceivedAgents = []; // used to store all the perceived agents by all agents
+    static allIntentions = []; // used to store all the intentions of all agents
+
+    static getConfig() {
+        return Config;
+    }
+
+    static updateConfig(config) {
+        Config.MOVEMENT_DURATION = config.MOVEMENT_DURATION;
+        if (config.PARCEL_DECADING_INTERVAL === "infinite") {
+            Config.PARCEL_DECADING_INTERVAL = Infinity;
+        } else {
+            Config.PARCEL_DECADING_INTERVAL =
+                parseInt(config.PARCEL_DECADING_INTERVAL.slice(0, -1)) * 1000;
+        }
+    }
+
+    static getMap() {
+        return this.map;
+    }
+
+    static initMap(width, height, tiles) {
+        this.map = new TileMap(width, height, tiles);
+    }
 
     static hasAgent(agentId) {
         return this.agents.has(agentId);
     }
 
-    static addAgent(agentId) {
-        this.agents.add(agentId);
+    static updateAgent(agentId, tile) {
+        this.agents.set(agentId, tile);
     }
 
-    static addAgentIntentions(agentId, intentions) {
-        for (const intention of intentions) {
+    static addPerceivedParcels(perceivedParcels) {
+        for (const parcel of perceivedParcels) {
+            const parcelIndex = this.allPerceivedParcels.findIndex((p) => p.id === parcel.id);
+            
+            if (parcelIndex === -1) {
+                this.allPerceivedParcels.push(parcel);
+            } else {
+                this.allPerceivedParcels[parcelIndex] = parcel;
+            }
+        }
+    }
+
+    static removeParcel(parcelId) {
+        this.ignoredParcels.addParcel(
+            this.perceivedParcels.getParcel(parcelId),
+        );
+    }
+
+    static shouldConsiderParcel(parcelId) {
+        return this.ignoredParcels.getParcel(parcelId) === null;
+    }
+
+    static addPerceivedAgents(perceivedAgents) {
+        for (const agent of perceivedAgents) {
+            const agentIndex = this.allPerceivedAgents.findIndex((a) => a.id === agent.id);
+            
+            if (agentIndex === -1) {
+                this.allPerceivedAgents.push(agent);
+            } else {
+                this.allPerceivedAgents[agentIndex] = agent;
+            }
+        }
+    }
+
+    static getAllPerceivedAgents() {
+        return this.allPerceivedAgents;
+    }
+
+    static computeAllDesires() {
+        for (agentId of this.agents.keys()) {
+            this.computeAgentDesires(agentId);
+        }
+    }
+
+    static computeAgentDesires(agentId) {
+        let options = [];
+
+        for (let p in this.allPerceivedParcels) {
+            if (
+                this.shouldConsiderParcel(p.id) &&
+                p.carriedBy === null
+            ) {
+                let score = computeParcelGain(agentId, p);
+
+                if (score > 0) {
+                    options.push(
+                        new Desire(
+                            this.getMap().getTile(
+                                p.x,
+                                p.y,
+                            ),
+                            score,
+                            p,
+                        ),
+                    );
+                }
+            }
+        }
+
+        const parcelsViewed = options.length;
+
+        const deliverySpots = this.getMap().getDeliverySpots();
+
+        for (let d in deliverySpots) {
+            let score = computeDeliveryGain(deliverySpots[d]);
+
+            if (score > 0) {
+                options.push(
+                    new Desire(
+                        this.getMap().getTile(
+                            deliverySpots[d].x,
+                            deliverySpots[d].y,
+                        ),
+                        score,
+                    ),
+                );
+            }
+        }
+
+        if (parcelsViewed === 0 && this.getCarriedBy(agentId).length === 0) {
+            options.push(
+                new Desire(
+                    this.getMap().getRandomTile(), 
+                    1
+                )
+            );
+        }
+        options.sort((a, b) => b.gain - a.gain); // best first
+
+        this.addAgentIntentions(agentId, options);
+    }
+
+    static computeParcelGain(agentId, parcel) {
+        let score = 0;
+
+        const gonnaCarry = getCarriedBy(agentId).length + 1; // agentId + parcel
+        const factor = 0.01 +
+            this.getConfig().MOVEMENT_DURATION /
+            this.getConfig().PARCEL_DECADING_INTERVAL;
+        const parcelDistance = distanceBetween(
+            this.agents.get(agentId),
+            this.getMap().getTile(parcel.x, parcel.y),
+        );
+        const closestDeliverySpotDistance = distanceBetween(
+            this.getMap().getTile(parcel.x, parcel.y),
+            BeliefSet.getClosestDeliverySpot(parcel),
+        );
+        score += this.getAgentReward(agentId); // agentId carrying
+        score += parcel.reward; // parcel reward
+        score -= factor * parcelDistance;
+        score -= gonnaCarry * factor * closestDeliverySpotDistance; // me + parcels decading
+
+        return score;
+    }
+
+    static computeDeliveryGain(agentId, deliverySpot) {
+        let score = 0;
+
+        const gonnaCarry = getCarriedBy(agentId).length;
+        const factor = 0.01 +
+            this.getConfig().MOVEMENT_DURATION /
+            this.getConfig().PARCEL_DECADING_INTERVAL;
+        const distance = distanceBetween(
+            this.agents.get(agentId),
+            deliverySpot,
+        );
+        score += this.getAgentReward(agentId); // agentId carrying
+        score -= gonnaCarry * factor * distance; // me + parcel decading
+
+        return score;
+    }
+
+    static getCarriedBy(agentId) {
+        let parcels = [];
+        for (let p of this.allPerceivedParcels) {
+            if (p.carriedBy === agentId) {
+                parcels.push(p);
+            }
+        }
+        return parcels;
+    }
+
+    static getAgentReward(agentId) {
+        let carriedParcels = this.getCarriedBy(agentId);
+        let reward = 0;
+        for (let p of carriedParcels) {
+            reward += p.reward;
+        }
+        return reward;
+    }
+
+    static decayParcelsReward() {
+        const decay = 1000 / this.getConfig().PARCEL_DECADING_INTERVAL;
+        for (let parcel of Array.from(this.perceivedParcels)) {
+            if (
+                this.shouldConsiderParcel(parcel.id) &&
+                parcel.carriedBy === null
+            ) {
+                parcel.reward -= decay;
+                if (parcel.reward <= 0) {
+                    this.removeParcel(parcel.id);
+                }
+            }
+        }
+    }
+
+    static decayAllIntentionGains() {
+        for (agentId in this.agents.keys()) {
+            for (let intention of this.allIntentions) {
+                if (intention.agentId !== agentId) {
+                    continue;
+                }
+
+                if (intention.intention.parcel) {
+                    intention.intention.gain = this.computeParcelGain(agentId, intention.intention.parcel);
+                } else {
+                    if (intention.intention.tile.type === TileType.DELIVERY) {
+                        intention.intention.gain = this.computeDeliveryGain(agentId, intention.intention.tile);
+                    }
+                }
+            }
+        }
+    }
+
+    static filterAllIntentionGains() {
+        this.allIntentions = this.allIntentions.filter((d) => d.intention.gain > 0);
+    }
+
+    static addAgentIntentions(agentId, agentDesires) {
+        for (const desire of agentDesires) {
             const intentionIndex = this.allIntentions.findIndex(
-                (i) => i.agentId === agentId && i.intention.equals(intention)
+                (i) => i.agentId === agentId && i.intention.equals(desire)
             );
             
             if (intentionIndex === -1) {
-                this.allIntentions.push({ agentId: agentId, intention: intention, isActive: false });
+                this.allIntentions.push({ agentId: agentId, intention: desire, isActive: false });
             } else {
-                this.allIntentions[intentionIndex].intention.gain = intention.gain;
+                this.allIntentions[intentionIndex].intention.gain = desire.gain;
             }
         }
 
@@ -173,3 +401,5 @@ class Coordinator {
         return existsIntersection;
     }
 }
+
+export default BeliefSet;

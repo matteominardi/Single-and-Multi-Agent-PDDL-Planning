@@ -29,7 +29,6 @@ client.onConfig((config) => updateConfig(config));
 let previousTarget = null;
 let patrolling = false;
 let failed = false;
-let domain;
 
 setTimeout(async () => {
     while (true) {

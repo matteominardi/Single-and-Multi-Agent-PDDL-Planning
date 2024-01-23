@@ -1,5 +1,6 @@
 import BeliefSet from "../common/belief.js";
 import { getPath } from "../common/helpers.js";
+import Coordinator from "../common_multi_agent/coordinator.js";
 
 function updateParcels(parcels) {
     BeliefSet.updateParcels(parcels);
@@ -139,7 +140,8 @@ function updateMe(me) {
 }
 
 function updateConfig(config) {
-    BeliefSet.updateConfig(config);
+    Coordinator.updateConfig(config);
+    // BeliefSet.updateConfig(config);
     // console.log(BeliefSet.getConfig());
 }
 
