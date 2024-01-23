@@ -1,6 +1,8 @@
 import aStar from "a-star";
 import BeliefSet from "./belief.js";
 import Me, { Actions } from "./me.js";
+import { Tile } from "./world.js";
+import { parse } from "dotenv";
 
 async function mySolver(
     pddlDomain,
@@ -41,11 +43,19 @@ async function mySolver(
         plan = await plan.map((line) => {
             const start = line.indexOf("(");
             const end = line.indexOf(")");
-            return line.slice(start + 1, end).split(" ")[0];
+            return line.slice(start + 1, end).split(" ");
         });
         // remove move_ prefix
-        plan = await plan.map((line) => line.replace("move_", ""));
-        return await plan;
+        const actions = await plan.map((line) => line[0].replace("move_", ""));
+        const tiles = await plan.map((tile) => {
+            const match = tile[tile.length - 1].match(/x(\d)y(\d)/);
+            return BeliefSet.getMap().getTile(
+                parseInt(match[1]),
+                parseInt(match[2]),
+            );
+        });
+        // return path and tiles
+        return [actions, tiles];
     } catch (error) {
         console.log(error);
     }

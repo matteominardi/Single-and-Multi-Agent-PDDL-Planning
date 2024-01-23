@@ -1,7 +1,7 @@
 import { onlineSolver } from "@unitn-asa/pddl-client";
 import BeliefSet from "./belief.js";
 import Desires from "./desires.js";
-import { computeDeliveryGain, computeParcelGain } from "./helpers.js";
+import { computeDeliveryGain, computeParcelGain, mySolver } from "./helpers.js";
 import { Actions } from "./me.js";
 import { TileType } from "./world.js";
 
@@ -68,7 +68,8 @@ class Intentions {
     }
 
     static async achieve(client, domain, problem) {
-        const actions = await onlineSolver(domain, problem);
+        let [actions, tiles] = await mySolver(domain, problem);
+        console.log(await tiles);
         const current_intention = Intentions.requestedIntention;
         while (actions.length > 0 && !this.shouldStop) {
             // if ((await actions.length) > 0) {
@@ -164,4 +165,3 @@ class Intentions {
 }
 
 export { Intention, Intentions };
-
