@@ -53,9 +53,19 @@ class Coordinator {
     }
 
     static removeParcel(parcelId) {
-        this.ignoredParcels.addParcel(
-            this.perceivedParcels.getParcel(parcelId),
-        );
+        const parcelIndex = this.allPerceivedParcels.findIndex((p) => p.id === parcelId);
+        
+        if (parcelIndex !== -1) {
+            this.ignoredParcels.addParcel(
+                new Parcel(
+                    parcelId,
+                    this.allPerceivedParcels[parcelIndex].x,
+                    this.allPerceivedParcels[parcelIndex].y,
+                    this.allPerceivedParcels[parcelIndex].carriedBy,
+                    this.allPerceivedParcels[parcelIndex].reward
+                )
+            );
+        }
     }
 
     static shouldConsiderParcel(parcelId) {
