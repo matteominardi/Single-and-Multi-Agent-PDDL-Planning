@@ -1,7 +1,6 @@
-import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
 
 class Messages {
-    static SEARCH_COORDINATOR = "search_coordinator'";
+    static SEARCH_COORDINATOR = "search_coordinator";
     static IM_COORDINATOR = "im_coordinator";
     static ACK = "ack";
 }
@@ -14,12 +13,12 @@ class Communication {
         static coordinator = null;
 
         static async handle(client, id, name, msg, reply) {
-            reply = this.fixReply(client, reply);
+            // reply = this.fixReply(client, reply);
             msg = this.fromJSON(msg);
             if (msg.message == Messages.IM_COORDINATOR) {
                 this.coordinator = id;
-                console.log(name, 'is the coordinator', reply);
-                await reply(this.toJSON(Messages.ACK));
+                console.log(name, 'is the coordinator');
+                reply(this.toJSON(Messages.ACK));
             }
         }
 
@@ -53,8 +52,8 @@ class Communication {
             // reply = this.fixReply(client, reply);
             msg = this.fromJSON(msg);
             if (msg.message == Messages.SEARCH_COORDINATOR) {
-                console.log(name, 'is searching for a coordinator', reply);
-                client.say(id, this.toJSON(Messages.IM_COORDINATOR));
+                console.log(name, 'is searching for a coordinator');
+                await client.ask(id, this.toJSON(Messages.IM_COORDINATOR));
             }
         }
 
