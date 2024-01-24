@@ -1,40 +1,33 @@
 import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
 import dotenv from "dotenv";
-import {
-    initMap,
-    updateAgents,
-    updateConfig,
-    updateMe,
-    updateParcels,
-} from "./callbacks.js";
+import Communication from "../common_multi_agent/communication.js";
+// import {
+//     initMap,
+//     updateAgents,
+//     updateConfig,
+//     updateMe,
+//     updateParcels,
+// } from "./callbacks.js";
 
 dotenv.config();
 
-console.log("Starting agent", process.env.TOKEN);
+// console.log("Starting agent", process.env.TOKEN);
 
 const client = new DeliverooApi(process.env.URL, process.env.TOKEN);
 
-client.onMap((w, h, tiles) => initMap(w, h, tiles));
-client.onParcelsSensing((parcels) => updateParcels(parcels));
-client.onAgentsSensing((agents) => updateAgents(agents));
-client.onYou((me) => updateMe(me));
-client.onConfig((config) => updateConfig(config));
-client.onMsg((id, name, msg, reply) => {
-    if (msg.message === "I am the coordinator") {
-        console.log(name, "is the coordinator");
-        // Coordinator.setCoordinatorId(id);
-        if (reply) {
-            reply({"message":"Hello coordinator"});
-        }
-    }
-});
-client.shout({ "message": "searching coordinator" });
+// client.onMap((w, h, tiles) => initMap(w, h, tiles));
+// client.onParcelsSensing((parcels) => updateParcels(parcels));
+// client.onAgentsSensing((agents) => updateAgents(agents));
+// client.onYou((me) => updateMe(me));
+// client.onConfig((config) => updateConfig(config));
+client.onMsg((id, name, msg, reply) => Communication.Agent.handle(client, id, name, msg, reply));
 
 let previousTarget = null;
 let patrolling = false;
 let failed = false;
 
-setTimeout(() => { }, 30000);
+setTimeout(() => { }, 2000);
+Communication.Agent.searchCoordinator(client);
 
 // setTimeout(async () => {
 //     agentId = BeliefSet.getMe().id;
