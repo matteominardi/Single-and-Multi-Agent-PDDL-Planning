@@ -9,6 +9,7 @@ class Coordinator {
     static allPerceivedParcels = []; // used to store all the perceived parcels by all agents
     static allPerceivedAgents = []; // used to store all the perceived agents by all agents
     static allIntentions = []; // used to store all the intentions of all agents
+    static isUpdatingBeliefs = false;
 
     static getConfig() {
         return Config;
@@ -21,6 +22,18 @@ class Coordinator {
         } else {
             Config.PARCEL_DECADING_INTERVAL =
                 parseInt(config.PARCEL_DECADING_INTERVAL.slice(0, -1)) * 1000;
+        }
+    }
+
+    static updateBeliefs() {
+        if (!Coordinator.isUpdatingBeliefs) {
+            Coordinator.isUpdatingBeliefs = true;
+            
+            setInterval(() => {
+                Coordinator.decayParcelsReward();
+                Coordinator.decayAllIntentionGains();
+                Coordinator.filterAllIntentionGains();
+            }, Coordinator.getConfig().PARCEL_DECADING_INTERVAL);
         }
     }
 

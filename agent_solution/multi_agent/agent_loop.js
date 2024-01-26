@@ -41,11 +41,9 @@ Communication.Agent.searchCoordinator(client);
 //         Coordinator.addAgent(agentId);
 //     }
 
-//     while (true) {
-//         Coordinator.decayParcelsReward();
-//         Coordinator.decayAllIntentionGains();
-//         Coordinator.filterAllIntentionGains();
+//     Coordinator.updateBeliefs();
 
+//     while (true) {
 //         let perceivedParcels = Array.from(BeliefSet.getParcels());
 //         console.log(agentId, "perceivedParcels", perceivedParcels.length, perceivedParcels)
 
