@@ -42,19 +42,20 @@ Communication.Agent.searchCoordinator(client);
 //     }
 
 //     while (true) {
-//         BeliefSet.decayParcelsReward();
-//         Intentions.decayGains();
-//         Intentions.filterGains();
+//         Coordinator.decayParcelsReward();
+//         Coordinator.decayAllIntentionGains();
+//         Coordinator.filterAllIntentionGains();
 
 //         let perceivedParcels = Array.from(BeliefSet.getParcels());
 //         console.log(agentId, "perceivedParcels", perceivedParcels.length, perceivedParcels)
-        
-//         let options = Desires.computeDesires();
-//         Intentions.add(options);
-//         Intentions.sort();
-//         console.log(agentId, "queue", Intentions.queue.length, Intentions.queue)
 
-//         Coordinator.addAgentIntentions(agentId, Intentions.queue);
+//         let perceivedAgents = Array.from(BeliefSet.getAgents());
+//         console.log(agentId, "perceivedAgents", perceivedAgents.length, perceivedAgents)
+
+//         Coordinator.addPerceivedParcels(perceivedParcels);
+//         Coordinator.addPerceivedAgents(perceivedAgents);
+
+//         Coordinator.computeAllDesires();
 //         Coordinator.coordinateIntentions();
         
 //         let target = Coordinator.getBestCoordinatedIntention(agentId);
@@ -92,7 +93,7 @@ Communication.Agent.searchCoordinator(client);
 //         }).catch(error => {
 //             console.log("Failed intention", error);
 //             failed = true;
-//             Coordinator.setIntentionStatus(target, false);
+//             Coordinator.setIntentionStatus({agentId: agentId, intention: target, isActive: true}, false);
 //         });
 //         console.log("---------------------------------------------------");
 //         await sleep(100);
