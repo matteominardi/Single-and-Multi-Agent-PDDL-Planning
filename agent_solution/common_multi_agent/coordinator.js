@@ -360,9 +360,7 @@ class Coordinator {
             this.allIntentions = this.allIntentions.concat(agentIntentions);
         }
 
-        this.allIntentions = filterIntentionsByAgent();
-
-        this.allIntentions = this.allIntentions.filter((intention) => intention.isActive === false);
+        this.allIntentions = this.filterIntentionsByAgent();
 
         this.allIntentions = this.allIntentions.sort((a, b) => b.intention.gain - a.intention.gain);
     }
@@ -401,11 +399,10 @@ class Coordinator {
                 !this.equalsIntention(selectedAction.intention, intention.intention) && 
                 selectedAction.isActive &&
                 selectedAction.agentId !== agentId && 
-                this.checkIntentionInterference(intention.intention, selectedAction.intention) &&
-                this.checkAgentInterference(agentId, intention.intention)
+                this.checkIntentionInterference(intention.intention, selectedAction.intention)
             );
-
-            if (!isInterference) {
+            
+            if (!isInterference && !this.checkAgentInterference(agentId, intention.intention)) {
                 selectedActions.push(intention);
             }
         }
