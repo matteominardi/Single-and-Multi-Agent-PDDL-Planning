@@ -1,33 +1,34 @@
-import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
-import dotenv from "dotenv";
-import Communication from "../common_multi_agent/communication.js";
-// import {
-//     initMap,
-//     updateAgents,
-//     updateConfig,
-//     updateMe,
-//     updateParcels,
-// } from "./callbacks.js";
+// import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
+// import dotenv from "dotenv";
+// import Communication from "../common_multi_agent/communication.js";
+import Coordinator from "../common_multi_agent/coordinator.js";
+// // import {
+// //     initMap,
+// //     updateAgents,
+// //     updateConfig,
+// //     updateMe,
+// //     updateParcels,
+// // } from "./callbacks.js";
 
-dotenv.config();
+// dotenv.config();
 
-// console.log("Starting agent", process.env.TOKEN);
+// // console.log("Starting agent", process.env.TOKEN);
 
-const client = new DeliverooApi(process.env.URL, process.env.TOKEN);
+// const client = new DeliverooApi(process.env.URL, process.env.TOKEN);
 
-// client.onMap((w, h, tiles) => initMap(w, h, tiles));
-// client.onParcelsSensing((parcels) => updateParcels(parcels));
-// client.onAgentsSensing((agents) => updateAgents(agents));
-// client.onYou((me) => updateMe(me));
-// client.onConfig((config) => updateConfig(config));
-client.onMsg((id, name, msg, reply) => Communication.Agent.handle(client, id, name, msg, reply));
+// // client.onMap((w, h, tiles) => initMap(w, h, tiles));
+// // client.onParcelsSensing((parcels) => updateParcels(parcels));
+// // client.onAgentsSensing((agents) => updateAgents(agents));
+// // client.onYou((me) => updateMe(me));
+// // client.onConfig((config) => updateConfig(config));
+// client.onMsg((id, name, msg, reply) => Communication.Agent.handle(client, id, name, msg, reply));
 
-let previousTarget = null;
-let patrolling = false;
-let failed = false;
+// let previousTarget = null;
+// let patrolling = false;
+// let failed = false;
 
-setTimeout(() => { }, 2000);
-Communication.Agent.searchCoordinator(client);
+// setTimeout(() => { }, 2000);
+// Communication.Agent.searchCoordinator(client);
 
 // setTimeout(async () => {
 //     agentId = BeliefSet.getMe().id;
@@ -44,20 +45,30 @@ Communication.Agent.searchCoordinator(client);
 //     Coordinator.updateBeliefs();
 
 //     while (true) {
-//         Coordinator.updateAgent(agentId, BeliefSet.getMe().tile);
 //         let perceivedParcels = Array.from(BeliefSet.getParcels());
 //         console.log(agentId, "perceivedParcels", perceivedParcels.length, perceivedParcels)
 
 //         let perceivedAgents = Array.from(BeliefSet.getAgents());
 //         console.log(agentId, "perceivedAgents", perceivedAgents.length, perceivedAgents)
 
-//         Coordinator.addPerceivedParcels(perceivedParcels);
-//         Coordinator.addPerceivedAgents(perceivedAgents);
-
-//         Coordinator.computeAllDesires();
-//         Coordinator.coordinateIntentions();
+//         // send perceived parcels and agents to coordinator and get intentions
+//         Communication.Agent.sendBelief(client,
+//             {
+//                 position: BeliefSet.getMe().tile,
+//                 perceivedParcels: perceivedParcels,
+//                 perceivedAgents: perceivedAgents
+//             })
         
-//         let target = Coordinator.getBestCoordinatedIntention(agentId);
+        
+//         x += lol;
+
+//         // Coordinator.addPerceivedParcels(perceivedParcels);
+//         // Coordinator.addPerceivedAgents(perceivedAgents);
+
+//         // Coordinator.computeAllDesires();
+//         // Coordinator.coordinateIntentions();
+        
+//         // let target = Coordinator.getBestCoordinatedIntention(agentId);
 //         console.log(agentId, "new target", target.tile.x, target.tile.y, target.gain);
         
 //         if (failed && target.equals(previousTarget)) {
@@ -99,4 +110,4 @@ Communication.Agent.searchCoordinator(client);
 //     }
 // }, 1000);
 
-export { client };
+// export { client };
