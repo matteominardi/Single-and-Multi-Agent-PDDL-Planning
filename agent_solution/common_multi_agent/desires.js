@@ -74,3 +74,4 @@ class Desires {
 }
 
 export default Desires;
+export { Desire };

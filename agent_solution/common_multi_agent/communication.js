@@ -1,8 +1,12 @@
+import Coordinator from './coordinator.js';
 
 class Messages {
     static SEARCH_COORDINATOR = "search_coordinator";
     static IM_COORDINATOR = "im_coordinator";
     static AGENT_BELIEF = "agent_belief";
+    static INTENTION = "intention";
+    static REMOVE_INTENTION = "remove_intention";
+    static SET_INTENTION_STATUS = "set_intention_status";
     static ACK = "ack";
 }
 
@@ -16,7 +20,7 @@ class Communication {
 
         static async handle(client, id, name, msg, reply) {
             // reply = this.fixReply(client, reply);
-            msg = this.fromJSON(msg, args);
+            msg = this.fromJSON(msg);
             if (msg.message == Messages.IM_COORDINATOR) {
                 this.coordinator = id;
                 console.log(name, 'is the coordinator');
@@ -24,12 +28,22 @@ class Communication {
             }
         }
 
-        static searchCoordinator(client) {
-            client.shout(this.toJSON(Messages.SEARCH_COORDINATOR));
+        static searchCoordinator(client, position) {
+            client.shout(this.toJSON(Messages.SEARCH_COORDINATOR, position));
         }
 
         static async sendBelief(client, belief) {
-            await client.ask(this.coordinator, this.toJSON(Messages.AGENT_BELIEF, belief));
+            let res = await client.ask(this.coordinator, this.toJSON(Messages.AGENT_BELIEF, belief));
+            res = JSON.parse(await res);
+            return await res.args;
+        }
+
+        static async removeCompletedIntention(client, intention) {
+            await client.ask(this.coordinator, this.toJSON(Messages.REMOVE_INTENTION, intention));
+        }
+
+        static async setIntentionStatus(client, intention, status) {
+            await client.ask(this.coordinator, this.toJSON(Messages.SET_INTENTION_STATUS, { intention: intention, status: status }));
         }
 
         static fixReply(reply,client) {
@@ -58,10 +72,29 @@ class Communication {
             // reply = this.fixReply(client, reply);
             msg = this.fromJSON(msg);
             if (msg.message == Messages.SEARCH_COORDINATOR) {
+                console.log("position", msg.args);
+                Coordinator.updateAgent(id, msg.args);
                 console.log(name, 'is searching for a coordinator');
                 await client.ask(id, this.toJSON(Messages.IM_COORDINATOR));
             } else if (msg.message == Messages.AGENT_BELIEF) {
-                console.log("Agent", id, "has belief", msg.args);
+                let perceivedParcels = msg.args.perceivedParcels;
+                let perceivedAgents = msg.args.perceivedAgents;
+
+
+                Coordinator.addPerceivedParcels(perceivedParcels);
+                Coordinator.addPerceivedAgents(perceivedAgents);
+
+                Coordinator.computeAllDesires();
+                Coordinator.coordinateIntentions();
+                
+                let target = Coordinator.getBestCoordinatedIntention(id);
+                console.log(name, 'has intention', target);
+                reply(this.toJSON(Messages.INTENTION, target));
+            } else if (msg.message == Messages.REMOVE_INTENTION) {
+                Coordinator.removeCompletedIntention(msg.args);
+                reply(this.toJSON(Messages.ACK));
+            } else if (msg.message == Messages.SET_INTENTION_STATUS) {
+                Coordinator.setIntentionStatus(msg.args.intention, msg.args.status);
                 reply(this.toJSON(Messages.ACK));
             }
         }

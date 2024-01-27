@@ -1,4 +1,4 @@
-import BeliefSet from "../common/belief.js";
+import BeliefSet from "../common_multi_agent/belief.js";
 import { getPath } from "../common/helpers.js";
 import Coordinator from "../common_multi_agent/coordinator.js";
 
@@ -109,7 +109,7 @@ function updateAgents(agents) {
 }
 
 function initMap(width, height, tiles) {
-    // BeliefSet.initMap(width, height, tiles);
+    BeliefSet.initMap(width, height, tiles);
     Coordinator.initMap(width, height, tiles);
     console.log("Map initialized!");
     // for (let tile of tiles) {

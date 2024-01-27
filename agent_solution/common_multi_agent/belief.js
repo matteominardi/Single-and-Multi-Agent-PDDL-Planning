@@ -112,6 +112,8 @@ class BeliefSet {
     }
 
     static updateAgents(agents) {
+        this.perceivedAgents = new Agents();
+        
         for (let a in agents) {
             // check if id already present
             if (this.perceivedAgents.getAgent(agents[a].id) !== null) {

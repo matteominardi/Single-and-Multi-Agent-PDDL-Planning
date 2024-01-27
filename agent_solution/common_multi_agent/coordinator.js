@@ -1,7 +1,8 @@
-import { Parcels } from "./parcel.js";
-import { TileMap } from "./world.js";
+import BeliefSet from "./belief.js";
 import Config from "./config.js";
-
+import { Parcels, Parcel } from "./parcel.js";
+import { TileMap } from "./world.js";
+import { Desire } from "../common_multi_agent/desires.js";
 class Coordinator {
     static map = null;
     static agents = new Map(); // used to store the position of the known agents
@@ -46,6 +47,7 @@ class Coordinator {
     }
 
     static equalsIntention(intentionA, intentionB) {
+        console.log("equalsIntention", intentionA, intentionB);
         return intentionA.tile === intentionB.tile;
     }
 
@@ -106,7 +108,7 @@ class Coordinator {
     }
 
     static computeAllDesires() {
-        for (agentId of this.agents.keys()) {
+        for (let agentId of this.agents.keys()) {
             this.computeAgentDesires(agentId);
         }
     }
@@ -141,7 +143,7 @@ class Coordinator {
         const deliverySpots = this.getMap().getDeliverySpots();
 
         for (let d in deliverySpots) {
-            let score = this.computeDeliveryGain(deliverySpots[d]);
+            let score = this.computeDeliveryGain(agentId, deliverySpots[d]);
 
             if (score > 0) {
                 options.push(
@@ -176,11 +178,11 @@ class Coordinator {
         const factor = 0.01 +
             this.getConfig().MOVEMENT_DURATION /
             this.getConfig().PARCEL_DECADING_INTERVAL;
-        const parcelDistance = distanceBetween(
+        const parcelDistance = this.distanceBetween(
             this.agents.get(agentId),
             this.getMap().getTile(parcel.x, parcel.y),
         );
-        const closestDeliverySpotDistance = distanceBetween(
+        const closestDeliverySpotDistance = this.distanceBetween(
             this.getMap().getTile(parcel.x, parcel.y),
             BeliefSet.getClosestDeliverySpot(parcel),
         );
@@ -195,11 +197,12 @@ class Coordinator {
     static computeDeliveryGain(agentId, deliverySpot) {
         let score = 0;
 
-        const gonnaCarry = getCarriedBy(agentId).length;
+        const gonnaCarry = this.getCarriedBy(agentId).length;
         const factor = 0.01 +
             this.getConfig().MOVEMENT_DURATION /
             this.getConfig().PARCEL_DECADING_INTERVAL;
-        const distance = distanceBetween(
+        console.log(this.agents.get(agentId), deliverySpot);
+        const distance = this.distanceBetween(
             this.agents.get(agentId),
             deliverySpot,
         );
@@ -207,6 +210,10 @@ class Coordinator {
         score -= gonnaCarry * factor * distance; // me + parcel decading
 
         return score;
+    }
+
+    static distanceBetween(a, b) {
+        return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
     }
 
     static getCarriedBy(agentId) {
@@ -229,8 +236,8 @@ class Coordinator {
     }
 
     static decayParcelsReward() {
-        const decay = 1000 / this.getConfig().PARCEL_DECADING_INTERVAL;
-        for (let parcel of Array.from(this.perceivedParcels)) {
+        const decay = 1000 / Coordinator.getConfig().PARCEL_DECADING_INTERVAL;
+        for (let parcel of this.allPerceivedParcels) {
             if (
                 this.shouldConsiderParcel(parcel.id) &&
                 parcel.carriedBy === null
@@ -278,7 +285,7 @@ class Coordinator {
             }
         }
 
-        this.allIntentions.sort((a, b) => b.intention.gain - a.intention.gain);
+        // this.allIntentions.sort((a, b) => b.intention.gain - a.intention.gain);
     }
 
     static getAgentIntentions(agentId) {
@@ -335,7 +342,7 @@ class Coordinator {
 
     static shiftAgentIntentions(agentId) {
         const intentionIndex = this.allIntentions.findIndex((i) => i.agentId === agentId);
-
+        console.log("shiftAgentIntentions", agentId, intentionIndex);
         if (intentionIndex !== -1) {
             this.allIntentions = this.allIntentions.splice(intentionIndex, 1);
         }
@@ -366,9 +373,9 @@ class Coordinator {
     }
 
     static filterIntentionsByAgent() {
-        const activeIntentions = intentions.filter(intent => intent.isActive);
+        const activeIntentions = this.allIntentions.filter(intent => intent.isActive);
 
-        const inactiveIntentions = intentions
+        const inactiveIntentions = this.allIntentions
             .filter(intent => !intent.isActive)
             .reduce((acc, intention) => {
                 const existing = acc.find(item => item.intention.tile === intention.intention.tile);

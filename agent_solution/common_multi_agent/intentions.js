@@ -1,6 +1,6 @@
 import BeliefSet from "./belief.js";
 import { computeActions, computeDeliveryGain, computeParcelGain } from "./helpers.js";
-import Me, { Actions } from "./me.js";
+import Me from "./me.js";
 import { TileType } from "./world.js";
 
 class Intention {
@@ -98,7 +98,7 @@ class Intentions {
             
             if (!failed) {
                 console.log(BeliefSet.getMe().id, "target tile reached!");      
-                await BeliefSet.getMe().performAction(this.requestedIntention);
+                await BeliefSet.getMe().performAction(client, this.requestedIntention);
                 this.success = true;
             }
         } else {

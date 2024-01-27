@@ -1,113 +1,118 @@
-// import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
-// import dotenv from "dotenv";
-// import Communication from "../common_multi_agent/communication.js";
+import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
+import dotenv from "dotenv";
+import BeliefSet from "../common_multi_agent/belief.js";
+import Communication from "../common_multi_agent/communication.js";
 import Coordinator from "../common_multi_agent/coordinator.js";
-// // import {
-// //     initMap,
-// //     updateAgents,
-// //     updateConfig,
-// //     updateMe,
-// //     updateParcels,
-// // } from "./callbacks.js";
+import { sleep } from "../common_multi_agent/helpers.js";
+import { Intentions } from "../common_multi_agent/intentions.js";
+import {
+    initMap,
+    updateAgents,
+    updateConfig,
+    updateMe,
+    updateParcels,
+} from "./callbacks.js";
 
-// dotenv.config();
+dotenv.config();
 
-// // console.log("Starting agent", process.env.TOKEN);
+console.log("Starting agent", process.env.TOKEN);
 
-// const client = new DeliverooApi(process.env.URL, process.env.TOKEN);
+console.log("Connecting to", process.env.URL);
 
-// // client.onMap((w, h, tiles) => initMap(w, h, tiles));
-// // client.onParcelsSensing((parcels) => updateParcels(parcels));
-// // client.onAgentsSensing((agents) => updateAgents(agents));
-// // client.onYou((me) => updateMe(me));
-// // client.onConfig((config) => updateConfig(config));
-// client.onMsg((id, name, msg, reply) => Communication.Agent.handle(client, id, name, msg, reply));
+const client = new DeliverooApi(process.env.URL, process.env.TOKEN);
 
-// let previousTarget = null;
-// let patrolling = false;
-// let failed = false;
+client.onMap((w, h, tiles) => initMap(w, h, tiles));
+client.onParcelsSensing((parcels) => updateParcels(parcels));
+client.onAgentsSensing((agents) => updateAgents(agents));
+client.onYou((me) => updateMe(me));
+client.onConfig((config) => updateConfig(config));
+client.onMsg((id, name, msg, reply) => Communication.Agent.handle(client, id, name, msg, reply));
 
-// setTimeout(() => { }, 2000);
-// Communication.Agent.searchCoordinator(client);
+let previousTarget = null;
+let patrolling = false;
+let failed = false;
 
-// setTimeout(async () => {
-//     agentId = BeliefSet.getMe().id;
+setTimeout(() => {
+    Communication.Agent.searchCoordinator(client, BeliefSet.getMe().getMyPosition());
+ }, 1000);
 
-//     if (!agentId) {
-//         console.log("Agent", agentId, "not found");
-//         return;
-//     }
 
-//     if (!Coordinator.hasAgent(agentId)) {
-//         Coordinator.addAgent(agentId);
-//     }
+setTimeout(async () => {
+    let agentId = BeliefSet.getMe().id;
 
-//     Coordinator.updateBeliefs();
+    if (!agentId) {
+        console.log("Agent", agentId, "not found");
+        return;
+    }
 
-//     while (true) {
-//         let perceivedParcels = Array.from(BeliefSet.getParcels());
-//         console.log(agentId, "perceivedParcels", perceivedParcels.length, perceivedParcels)
-
-//         let perceivedAgents = Array.from(BeliefSet.getAgents());
-//         console.log(agentId, "perceivedAgents", perceivedAgents.length, perceivedAgents)
-
-//         // send perceived parcels and agents to coordinator and get intentions
-//         Communication.Agent.sendBelief(client,
-//             {
-//                 position: BeliefSet.getMe().tile,
-//                 perceivedParcels: perceivedParcels,
-//                 perceivedAgents: perceivedAgents
-//             })
+    while (true) {
+        BeliefSet.decayParcelsReward();
+        // Intentions.decayGains();
+        // Intentions.filterGains();
         
-        
-//         x += lol;
+        let perceivedParcels = Array.from(BeliefSet.getParcels());
+        console.log(agentId, "perceivedParcels", perceivedParcels.length, perceivedParcels)
 
-//         // Coordinator.addPerceivedParcels(perceivedParcels);
-//         // Coordinator.addPerceivedAgents(perceivedAgents);
+        let perceivedAgents = Array.from(BeliefSet.getAgents());
+        console.log(agentId, "perceivedAgents", perceivedAgents.length, perceivedAgents)
 
-//         // Coordinator.computeAllDesires();
-//         // Coordinator.coordinateIntentions();
+        // send perceived parcels and agents to coordinator and get intentions
         
-//         // let target = Coordinator.getBestCoordinatedIntention(agentId);
-//         console.log(agentId, "new target", target.tile.x, target.tile.y, target.gain);
-        
-//         if (failed && target.equals(previousTarget)) {
-//             console.log(agentId, "swapping");
 
-//             Coordinator.shiftAgentIntentions(agentId);
-//             target = Coordinator.getBestCoordinatedIntention(agentId);
+        let target = await Communication.Agent.sendBelief(client,
+                    {
+                        position: BeliefSet.getMe().tile,
+                        perceivedParcels: perceivedParcels,
+                        perceivedAgents: perceivedAgents
+            })
+        
+        Intentions.requestedIntention = target;
+
+        console.log(agentId, "current target", target.tile.x, target.tile.y, target.gain);
+        
+        // let target = Coordinator.getBestCoordinatedIntention(agentId);
+        console.log(agentId, "new target", target.tile.x, target.tile.y, target.gain);
+
+        
+        if (failed && Coordinator.equalsIntention(target, previousTarget)) {
+            console.log(agentId, "swapping");
+
+            Coordinator.shiftAgentIntentions(agentId);
+            target = Coordinator.getBestCoordinatedIntention(agentId);
             
-//             failed = false;
-//         } 
+            failed = false;
+        } 
+
+
         
-//         if (BeliefSet.getCarriedByMe().length === 0) {
-//             if (!patrolling && target.gain <= 1) {
-//                 console.log(agentId, "started patrolling");
-//                 patrolling = true;
-//             } else if (patrolling && target.gain <=1) {
-//                 console.log(agentId, "patrolling");
-//             } else if (patrolling && target.gain > 1) {
-//                 console.log(agentId, "stopped patrolling");
-//                 patrolling = false;
-//             }
-//         }
+        if (BeliefSet.getCarriedByMe().length === 0) {
+            if (!patrolling && target.gain <= 1) {
+                console.log(agentId, "started patrolling");
+                patrolling = true;
+            } else if (patrolling && target.gain <=1) {
+                console.log(agentId, "patrolling");
+            } else if (patrolling && target.gain > 1) {
+                console.log(agentId, "stopped patrolling");
+                patrolling = false;
+            }
+        }
 
-//         if (!previousTarget || !patrolling) {
-//             previousTarget = target;
-//         } 
+        if (!previousTarget || !patrolling) {
+            previousTarget = target;
+        } 
         
-//         Intentions.requestedIntention = target;
+        Intentions.requestedIntention = target;
 
-//         await Intentions.achieve(client).then(() => {
-//             Coordinator.removeCompletedIntention(target);
-//         }).catch(error => {
-//             console.log("Failed intention", error);
-//             failed = true;
-//             Coordinator.setIntentionStatus({agentId: agentId, intention: target, isActive: true}, false);
-//         });
-//         console.log("---------------------------------------------------");
-//         await sleep(100);
-//     }
-// }, 1000);
+        await Intentions.achieve(client).then(() => {
+            Communication.Agent.removeCompletedIntention(client, target);
+        }).catch(error => {
+            console.log("Failed intention", error);
+            failed = true;
+            Communication.Agent.setIntentionStatus(client, {agentId: agentId, intention: target, isActive: true}, false);
+        });
+        console.log("---------------------------------------------------");
+        await sleep(500);
+    }
+}, 2000);
 
-// export { client };
+export { client };
