@@ -28,7 +28,7 @@ class Coordinator {
     static updateBeliefs() {
         if (!Coordinator.isUpdatingBeliefs) {
             Coordinator.isUpdatingBeliefs = true;
-            
+
             setInterval(() => {
                 Coordinator.decayParcelsReward();
                 Coordinator.decayAllIntentionGains();
@@ -60,7 +60,7 @@ class Coordinator {
     static addPerceivedParcels(perceivedParcels) {
         for (const parcel of perceivedParcels) {
             const parcelIndex = this.allPerceivedParcels.findIndex((p) => p.id === parcel.id);
-            
+
             if (parcelIndex === -1) {
                 this.allPerceivedParcels.push(parcel);
             } else {
@@ -71,7 +71,7 @@ class Coordinator {
 
     static removeParcel(parcelId) {
         const parcelIndex = this.allPerceivedParcels.findIndex((p) => p.id === parcelId);
-        
+
         if (parcelIndex !== -1) {
             this.ignoredParcels.addParcel(
                 new Parcel(
@@ -92,7 +92,7 @@ class Coordinator {
     static addPerceivedAgents(perceivedAgents) {
         for (const agent of perceivedAgents) {
             const agentIndex = this.allPerceivedAgents.findIndex((a) => a.id === agent.id);
-            
+
             if (agentIndex === -1) {
                 this.allPerceivedAgents.push(agent);
             } else {
@@ -159,7 +159,7 @@ class Coordinator {
         if (parcelsViewed === 0 && this.getCarriedBy(agentId).length === 0) {
             options.push(
                 new Desire(
-                    this.getMap().getRandomTile(), 
+                    this.getMap().getRandomTile(),
                     1
                 )
             );
@@ -270,7 +270,7 @@ class Coordinator {
             const intentionIndex = this.allIntentions.findIndex(
                 (i) => i.agentId === agentId && this.equalsIntention(i.intention, desire)
             );
-            
+
             if (intentionIndex === -1 && !this.isAlreadyActiveIntention(agentId, desire)) {
                 this.allIntentions.push({ agentId: agentId, intention: desire, isActive: false });
             } else {
@@ -280,14 +280,14 @@ class Coordinator {
 
         this.allIntentions.sort((a, b) => b.intention.gain - a.intention.gain);
     }
-    
+
     static getAgentIntentions(agentId) {
         return this.allIntentions.filter((i) => i.agentId === agentId);
     }
 
     static isAlreadyActiveIntention(agentId, intention) {
         let isActive = false;
-        
+
         for (const otherAgentId of this.agents) {
             if (otherAgentId === agentId) {
                 continue;
@@ -296,7 +296,7 @@ class Coordinator {
             const intentionIndex = this.allIntentions.findIndex(
                 (i) => i.agentId === otherAgentId && this.equalsIntention(i.intention, intention)
             );
-            
+
             if (intentionIndex !== -1) {
                 isActive = isActive || this.allIntentions[intentionIndex].isActive;
             }
@@ -313,11 +313,11 @@ class Coordinator {
         const intention = this.allIntentions.find(
             (i) => i.isActive === false && i.agentId === agentId && !this.isAlreadyActiveIntention(agentId, i.intention)
         );
-        
+
         if (intention) {
             this.setIntentionStatus(intention, true);
         }
-        
+
         return intention.intention;
     }
 
@@ -326,7 +326,7 @@ class Coordinator {
             const intentionIndex = this.allIntentions.findIndex(
                 (i) => i.agentId === agentId && this.equalsIntention(i.intention, intention.intention)
             );
-            
+
             if (intentionIndex !== -1) {
                 this.allIntentions[intentionIndex].isActive = status;
             }
@@ -335,7 +335,7 @@ class Coordinator {
 
     static shiftAgentIntentions(agentId) {
         const intentionIndex = this.allIntentions.findIndex((i) => i.agentId === agentId);
-        
+
         if (intentionIndex !== -1) {
             this.allIntentions = this.allIntentions.splice(intentionIndex, 1);
         }
@@ -346,7 +346,7 @@ class Coordinator {
             const intentionIndex = this.allIntentions.findIndex(
                 (i) => i.agentId === agentId && this.equalsIntention(i.intention, intention)
             );
-            
+
             if (intentionIndex !== -1) {
                 this.allIntentions.splice(intentionIndex, 1);
             }
@@ -371,24 +371,24 @@ class Coordinator {
         const inactiveIntentions = intentions
             .filter(intent => !intent.isActive)
             .reduce((acc, intention) => {
-            const existing = acc.find(item => item.intention.tile === intention.intention.tile);
+                const existing = acc.find(item => item.intention.tile === intention.intention.tile);
 
-            if (!existing || intention.intention.gain > existing.intention.gain) {
-                if (existing) {
-                    acc.splice(acc.indexOf(existing), 1);
+                if (!existing || intention.intention.gain > existing.intention.gain) {
+                    if (existing) {
+                        acc.splice(acc.indexOf(existing), 1);
+                    }
+                    acc.push(intention);
                 }
-                acc.push(intention);
-            }
 
-            return acc;
+                return acc;
             }, []);
 
         return [...activeIntentions, ...inactiveIntentions];
     }
-    
+
     static selectActions(allIntentions, agentId) {
         const selectedActions = [];
-    
+
         for (const intention of allIntentions) {
             if (intention.agentId !== agentId || intention.isActive) {
                 continue;
@@ -396,21 +396,69 @@ class Coordinator {
 
             // Check if the action interferes with any active action
             const isInterference = allIntentions.some((selectedAction) =>
-                !this.equalsIntention(selectedAction.intention, intention.intention) && 
+                !this.equalsIntention(selectedAction.intention, intention.intention) &&
                 selectedAction.isActive &&
-                selectedAction.agentId !== agentId && 
+                selectedAction.agentId !== agentId &&
                 this.checkIntentionInterference(intention.intention, selectedAction.intention)
             );
-            
-            if (!isInterference && !this.checkAgentInterference(agentId, intention.intention)) {
+
+            teamInference = this.checkTeamInterference(agentId, intention.intention);
+
+            if (!isInterference &&
+                !this.checkOpponentInterference(agentId, intention.intention) &&
+                !teamInference.existsIntersection) {
                 selectedActions.push(intention);
+            } else if (!isInference &&
+                !intention.intention.parcel &&
+                teamInference.existsIntersection) {
+                const lastValidTile = teamInference.lastValidTile;
+                selectedActions.push(
+                    {
+                        agentId: agentId,
+                        intention: new Desire(
+                            lastValidTile,
+                            intention.intention.gain
+                        ),
+                        isActive: false
+                    }
+                );
             }
         }
-    
+
         return selectedActions;
     }
 
-    static checkAgentInterference(agentId, intention) {
+    static checkTeamInterference(agentId, intention) {
+        const path = Me.pathTo(intention.tile);
+        const visitedTiles = new Set();
+        let lastValidTile = null;
+        let existsIntersection = false;
+
+        for (const tile of path) {
+            const key = `${tile.x},${tile.y}`;
+            visitedTiles.add(key);
+
+            // Check if any agent is already on the current tile
+            const agentOnTile = Array.from(this.agents.entries())
+                .find(([agent, agentTile]) =>
+                    agent !== agentId && this.hasAgent(agent) &&
+                    agentTile.x === tile.x && agentTile.y === tile.y);
+
+            if (!agentOnTile) {
+                lastValidTile = tile;
+            } else {
+                existsIntersection = true;
+                break;
+            }
+        }
+
+        return {
+            existsIntersection: existsIntersection,
+            lastValidTile: lastValidTile
+        };
+    }
+
+    static checkOpponentInterference(agentId, intention) {
         const path = Me.pathTo(intention.tile);
         const visitedTiles = new Set();
         let existsIntersection = false;
@@ -422,12 +470,12 @@ class Coordinator {
 
         // Iterate over the perceived agents and check if any tile is not available
         for (const agent of this.allPerceivedAgents) {
-            if (agent.id === agentId) {
+            if (agent.id === agentId || this.hasAgent(agent.id)) {
                 continue;
             }
 
             const key = `${agent.x},${agent.y}`;
- 
+
             if (visitedTiles.has(key)) {
                 // Common tile found, path not available
                 existsIntersection = true;
@@ -437,7 +485,7 @@ class Coordinator {
 
         return existsIntersection;
     }
-    
+
     static checkIntentionInterference(intentionA, intentionB) {
         if (intentionA.tile === intentionB.tile) {
             return true;
@@ -468,7 +516,7 @@ class Coordinator {
         // Iterate over the objects in the second path and check if any tile is already visited
         for (const tile of pathB) {
             const key = `${tile.x},${tile.y}`;
- 
+
             if (visitedTiles.has(key)) {
                 // Paths intersect, common tile found
                 existsIntersection = true;

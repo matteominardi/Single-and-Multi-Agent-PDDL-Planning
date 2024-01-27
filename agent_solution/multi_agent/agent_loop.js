@@ -44,6 +44,7 @@ Communication.Agent.searchCoordinator(client);
 //     Coordinator.updateBeliefs();
 
 //     while (true) {
+//         Coordinator.updateAgent(agentId, BeliefSet.getMe().tile);
 //         let perceivedParcels = Array.from(BeliefSet.getParcels());
 //         console.log(agentId, "perceivedParcels", perceivedParcels.length, perceivedParcels)
 
