@@ -1,6 +1,6 @@
 import BeliefSet from "./belief.js";
 import { computeActions, computeDeliveryGain, computeParcelGain } from "./helpers.js";
-import Me, { Actions } from "./me.js";
+import Me from "./me.js";
 import { TileType } from "./world.js";
 
 class Intention {
@@ -62,6 +62,7 @@ class Intentions {
     }
 
     static getBestIntention() {
+        console.log("queue", this.queue);
         return new Intention(this.queue[0]);
     }
 
@@ -80,7 +81,7 @@ class Intentions {
 
         const path = Me.pathTo(this.requestedIntention.tile);
         if (path.status === "success") {
-            const perceivedAgents = BeliefSet.getAgents();
+            const perceivedAgents = Array.from(BeliefSet.getAgents());
 
             const existsIntersection = path.path.some((tile) =>
                 perceivedAgents.some((agent) => agent.x === tile.x && agent.y === tile.y),
@@ -117,7 +118,7 @@ class Intentions {
             
             if (!failed) {
                 console.log(BeliefSet.getMe().id, "target tile reached!");      
-                await BeliefSet.getMe().performAction();
+                await BeliefSet.getMe().performAction(client);
                 this.success = true;
             }
         } else {

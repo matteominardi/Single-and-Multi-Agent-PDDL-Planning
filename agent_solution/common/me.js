@@ -1,5 +1,7 @@
 import BeliefSet from "./belief.js";
 import { getPath } from "./helpers.js";
+import { Intentions } from "./intentions.js";
+import { TileType } from "./world.js";
 
 const Actions = {
     UP: "up",
@@ -50,7 +52,7 @@ class Me {
         return BeliefSet.getMap().getTile(this.last_x, this.last_y);
     }
 
-    async performAction() {
+    async performAction(client) {
         let currentTile = this.getMyPosition();
         console.log("currentTile", currentTile.x, currentTile.y, currentTile.type)
         console.log("my reward ", BeliefSet.getMyReward(), "getCarriedByMe", BeliefSet.getCarriedByMe().length)
@@ -69,14 +71,14 @@ class Me {
                     await this.do_action(client, Actions.PICKUP);
                     
                     BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
-                    this.queue = this.queue.filter(
+                    Intentions.queue = Intentions.queue.filter(
                         (d) => (d.parcel ? d.parcel.id !== perceivedParcels[parcel].id : true),
                     );
                     break;
                 }
             }
         }
-        this.queue = this.queue.filter(
+        Intentions.queue = Intentions.queue.filter(
             (d) => d.tile !== currentTile && d.gain > 0 && (d.parcel ? d.parcel.reward > 0 : true),
         );
     }
