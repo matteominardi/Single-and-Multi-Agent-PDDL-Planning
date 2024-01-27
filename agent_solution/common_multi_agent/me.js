@@ -50,13 +50,14 @@ class Me {
         return BeliefSet.getMap().getTile(this.last_x, this.last_y);
     }
 
-    async performAction() {
+    async performAction(requestedIntention) {
         let currentTile = this.getMyPosition();
         console.log("currentTile", currentTile.x, currentTile.y, currentTile.type)
         console.log("my reward ", BeliefSet.getMyReward(), "getCarriedByMe", BeliefSet.getCarriedByMe().length)
         let perceivedParcels = Array.from(BeliefSet.getParcels());
         console.log("perceivedParcels", perceivedParcels.length, perceivedParcels)
-        if (currentTile.type === TileType.DELIVERY && BeliefSet.getCarriedByMe().length > 0) {
+        if ((currentTile.type === TileType.DELIVERY && BeliefSet.getCarriedByMe().length > 0) || 
+            (requestedIntention.forcedDelivery && BeliefSet.getCarriedByMe().length > 0)) {
             await this.do_action(client, Actions.PUT_DOWN);
             BeliefSet.emptyCarriedByMe();
         } else if (currentTile.type === TileType.NORMAL) {

@@ -417,7 +417,9 @@ class Coordinator {
                         agentId: agentId,
                         intention: new Desire(
                             lastValidTile,
-                            intention.intention.gain
+                            intention.intention.gain,
+                            null,
+                            true
                         ),
                         isActive: false
                     }

@@ -98,7 +98,7 @@ class Intentions {
             
             if (!failed) {
                 console.log(BeliefSet.getMe().id, "target tile reached!");      
-                await BeliefSet.getMe().performAction();
+                await BeliefSet.getMe().performAction(this.requestedIntention);
                 this.success = true;
             }
         } else {

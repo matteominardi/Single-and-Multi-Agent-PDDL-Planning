@@ -9,10 +9,11 @@ class Desire {
     tile;
     gain;
 
-    constructor(tile, gain, parcel = null) {
+    constructor(tile, gain, parcel = null, forcedDelivery = false) {
         this.tile = tile;
         this.gain = gain;
         this.parcel = parcel;
+        this.forcedDelivery = forcedDelivery;
     }
 }
 
