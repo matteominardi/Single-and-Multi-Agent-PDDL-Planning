@@ -181,8 +181,8 @@ class Coordinator {
                 this.getConfig().PARCEL_DECADING_INTERVAL;
 
         let myPos = Coordinator.getMap().getTile(
-            this.agents.get(agentId).info.last_x,
-            this.agents.get(agentId).info.last_y,
+            this.agents.get(agentId).last_x,
+            this.agents.get(agentId).last_y,
         );
 
         const parcelDistance = this.distanceBetween(
@@ -210,8 +210,8 @@ class Coordinator {
             this.getConfig().MOVEMENT_DURATION /
                 this.getConfig().PARCEL_DECADING_INTERVAL;
         let myPos = Coordinator.getMap().getTile(
-            this.agents.get(agentId).info.last_x,
-            this.agents.get(agentId).info.last_y,
+            this.agents.get(agentId).last_x,
+            this.agents.get(agentId).last_y,
         );
         const distance = this.distanceBetween(myPos, deliverySpot);
         score += this.getAgentReward(agentId); // agentId carrying
@@ -227,8 +227,8 @@ class Coordinator {
             "delivery",
             deliverySpot.x,
             deliverySpot.y,
-            this.agents.get(agentId).info.last_x,
-            this.agents.get(agentId).info.last_y,
+            this.agents.get(agentId).last_x,
+            this.agents.get(agentId).last_y,
             myPos,
             distance,
             score,

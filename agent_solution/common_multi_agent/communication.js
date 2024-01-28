@@ -106,7 +106,7 @@ class Communication {
                 let perceivedAgents = msg.args.perceivedAgents;
                 let carriedBy = msg.args.carriedBy;
 
-                Coordinator.updateAgent(id, msg.args);
+                Coordinator.updateAgent(id, msg.args.info);
 
                 Coordinator.addPerceivedParcels(perceivedParcels);
                 Coordinator.addPerceivedAgents(perceivedAgents);
