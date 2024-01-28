@@ -124,4 +124,3 @@ class TileMap {
 }
 
 export { Tile, TileMap, TileType };
-

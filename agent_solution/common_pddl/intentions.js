@@ -69,11 +69,13 @@ class Intentions {
 
     static async achieve(client, domain, problem) {
         const perceivedAgents = BeliefSet.getAgents();
-        
+
         let [actions, tiles] = await mySolver(domain, problem);
 
         const existsIntersection = tiles.some((tile) =>
-            perceivedAgents.some((agent) => agent.x === tile.x && agent.y === tile.y),
+            perceivedAgents.some(
+                (agent) => agent.x === tile.x && agent.y === tile.y,
+            ),
         );
 
         if (existsIntersection) {
@@ -82,8 +84,7 @@ class Intentions {
             // throw "path blocekd";
             return;
         }
-        
-        console.log(await tiles);
+
         const current_intention = Intentions.requestedIntention;
         while (actions.length > 0 && !this.shouldStop) {
             // if ((await actions.length) > 0) {
@@ -109,7 +110,7 @@ class Intentions {
                 console.log(err);
                 throw err;
             }
-            
+
             await BeliefSet.getMe().performAction();
         }
 

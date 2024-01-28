@@ -3,7 +3,7 @@ import Config from "./config.js";
 import { TileType } from "./world.js";
 import { Parcels, Parcel } from "./parcel.js";
 import { TileMap } from "./world.js";
-import { Desire } from "../common_multi_agent/desires.js";
+import { Desire } from "./desires.js";
 class Coordinator {
     static map = null;
     static agents = new Map(); // used to store the position of the known agents
@@ -42,7 +42,10 @@ class Coordinator {
     }
 
     static equalsIntention(intentionA, intentionB) {
-        return intentionA.tile.x === intentionB.tile.x && intentionA.tile.y === intentionB.tile.y;
+        return (
+            intentionA.tile.x === intentionB.tile.x &&
+            intentionA.tile.y === intentionB.tile.y
+        );
     }
 
     static hasAgent(agentId) {
@@ -55,7 +58,9 @@ class Coordinator {
 
     static addPerceivedParcels(perceivedParcels) {
         for (const parcel of perceivedParcels) {
-            const parcelIndex = this.allPerceivedParcels.findIndex((p) => p.id === parcel.id);
+            const parcelIndex = this.allPerceivedParcels.findIndex(
+                (p) => p.id === parcel.id,
+            );
 
             if (parcelIndex === -1) {
                 this.allPerceivedParcels.push(parcel);
@@ -66,7 +71,9 @@ class Coordinator {
     }
 
     static removeParcel(parcelId) {
-        const parcelIndex = this.allPerceivedParcels.findIndex((p) => p.id === parcelId);
+        const parcelIndex = this.allPerceivedParcels.findIndex(
+            (p) => p.id === parcelId,
+        );
 
         if (parcelIndex !== -1) {
             this.ignoredParcels.addParcel(
@@ -75,8 +82,8 @@ class Coordinator {
                     this.allPerceivedParcels[parcelIndex].x,
                     this.allPerceivedParcels[parcelIndex].y,
                     this.allPerceivedParcels[parcelIndex].carriedBy,
-                    this.allPerceivedParcels[parcelIndex].reward
-                )
+                    this.allPerceivedParcels[parcelIndex].reward,
+                ),
             );
         }
     }
@@ -87,7 +94,9 @@ class Coordinator {
 
     static addPerceivedAgents(perceivedAgents) {
         for (const agent of perceivedAgents) {
-            const agentIndex = this.allPerceivedAgents.findIndex((a) => a.id === agent.id);
+            const agentIndex = this.allPerceivedAgents.findIndex(
+                (a) => a.id === agent.id,
+            );
 
             if (agentIndex === -1) {
                 this.allPerceivedAgents.push(agent);
@@ -115,7 +124,10 @@ class Coordinator {
                 this.shouldConsiderParcel(this.allPerceivedParcels[p].id) &&
                 this.allPerceivedParcels[p].carriedBy === null
             ) {
-                let score = this.computeParcelGain(agentId, this.allPerceivedParcels[p]);
+                let score = this.computeParcelGain(
+                    agentId,
+                    this.allPerceivedParcels[p],
+                );
                 if (score > 0) {
                     options.push(
                         new Desire(
@@ -152,15 +164,10 @@ class Coordinator {
         }
 
         if (parcelsViewed === 0 && this.getCarriedBy(agentId).length === 0) {
-            options.push(
-                new Desire(
-                    this.getMap().getRandomTile(),
-                    1
-                )
-            );
+            options.push(new Desire(this.getMap().getRandomTile(), 1));
         }
         // options.sort((a, b) => b.gain - a.gain); // best first
-        console.log("Computed desires for agent", agentId, options)
+        console.log("Computed desires for agent", agentId, options);
         this.addAgentIntentions(agentId, options);
     }
 
@@ -168,11 +175,15 @@ class Coordinator {
         let score = 0;
 
         const gonnaCarry = this.getCarriedBy(agentId).length + 1; // agentId + parcel
-        const factor = 0.01 +
+        const factor =
+            0.01 +
             this.getConfig().MOVEMENT_DURATION /
-            this.getConfig().PARCEL_DECADING_INTERVAL;
-        
-        let myPos = Coordinator.getMap().getTile(this.agents.get(agentId).last_x, this.agents.get(agentId).last_y);
+                this.getConfig().PARCEL_DECADING_INTERVAL;
+
+        let myPos = Coordinator.getMap().getTile(
+            this.agents.get(agentId).info.last_x,
+            this.agents.get(agentId).info.last_y,
+        );
 
         const parcelDistance = this.distanceBetween(
             myPos,
@@ -194,18 +205,34 @@ class Coordinator {
         let score = 0;
 
         const gonnaCarry = this.getCarriedBy(agentId).length;
-        const factor = 0.01 +
+        const factor =
+            0.01 +
             this.getConfig().MOVEMENT_DURATION /
-            this.getConfig().PARCEL_DECADING_INTERVAL;
-        let myPos = Coordinator.getMap().getTile(this.agents.get(agentId).last_x, this.agents.get(agentId).last_y);
-        const distance = this.distanceBetween(
-            myPos,
-            deliverySpot,
+                this.getConfig().PARCEL_DECADING_INTERVAL;
+        let myPos = Coordinator.getMap().getTile(
+            this.agents.get(agentId).info.last_x,
+            this.agents.get(agentId).info.last_y,
         );
+        const distance = this.distanceBetween(myPos, deliverySpot);
         score += this.getAgentReward(agentId); // agentId carrying
         score -= gonnaCarry * factor * distance; // me + parcel decading
-        console.log("carrying", agentId, this.agents.get(agentId), this.getAgentReward(agentId), gonnaCarry);
-        console.log("delivery", deliverySpot.x, deliverySpot.y, this.agents.get(agentId).last_x, this.agents.get(agentId).last_y, myPos, distance, score);
+        console.log(
+            "carrying",
+            agentId,
+            this.agents.get(agentId),
+            this.getAgentReward(agentId),
+            gonnaCarry,
+        );
+        console.log(
+            "delivery",
+            deliverySpot.x,
+            deliverySpot.y,
+            this.agents.get(agentId).info.last_x,
+            this.agents.get(agentId).info.last_y,
+            myPos,
+            distance,
+            score,
+        );
 
         return score;
     }
@@ -241,7 +268,7 @@ class Coordinator {
 
         for (let parcel of this.allPerceivedParcels) {
             if (
-                this.shouldConsiderParcel(parcel.id) 
+                this.shouldConsiderParcel(parcel.id)
                 // parcel.carriedBy === null
             ) {
                 parcel.reward -= decay;
@@ -261,11 +288,20 @@ class Coordinator {
             // }
 
             if (intention.intention.parcel) {
-                intention.intention.gain = this.computeParcelGain(intention.agentId, intention.intention.parcel);
+                intention.intention.gain = this.computeParcelGain(
+                    intention.agentId,
+                    intention.intention.parcel,
+                );
             } else {
                 // TODO: check if forcedDelivery is needed
-                if (intention.intention.tile.type === TileType.DELIVERY || intention.forcedDelivery) {
-                    intention.intention.gain = this.computeDeliveryGain(intention.agentId, intention.intention.tile);
+                if (
+                    intention.intention.tile.type === TileType.DELIVERY ||
+                    intention.forcedDelivery
+                ) {
+                    intention.intention.gain = this.computeDeliveryGain(
+                        intention.agentId,
+                        intention.intention.tile,
+                    );
                 }
             }
         }
@@ -273,17 +309,28 @@ class Coordinator {
     }
 
     static filterAllIntentionGains() {
-        this.allIntentions = this.allIntentions.filter((d) => d.intention.gain > 0);
+        this.allIntentions = this.allIntentions.filter(
+            (d) => d.intention.gain > 0,
+        );
     }
 
     static addAgentIntentions(agentId, agentDesires) {
         for (const desire of agentDesires) {
             const intentionIndex = this.allIntentions.findIndex(
-                (i) => i.agentId === agentId && this.equalsIntention(i.intention, desire)
+                (i) =>
+                    i.agentId === agentId &&
+                    this.equalsIntention(i.intention, desire),
             );
 
-            if (intentionIndex === -1 && !this.isAlreadyActiveIntention(agentId, desire)) {
-                this.allIntentions.push({ agentId: agentId, intention: desire, isActive: false });
+            if (
+                intentionIndex === -1 &&
+                !this.isAlreadyActiveIntention(agentId, desire)
+            ) {
+                this.allIntentions.push({
+                    agentId: agentId,
+                    intention: desire,
+                    isActive: false,
+                });
             } else {
                 this.allIntentions[intentionIndex].intention.gain = desire.gain;
             }
@@ -305,11 +352,14 @@ class Coordinator {
             }
 
             const intentionIndex = this.allIntentions.findIndex(
-                (i) => i.agentId === otherAgentId && this.equalsIntention(i.intention, intention)
+                (i) =>
+                    i.agentId === otherAgentId &&
+                    this.equalsIntention(i.intention, intention),
             );
 
             if (intentionIndex !== -1) {
-                isActive = isActive || this.allIntentions[intentionIndex].isActive;
+                isActive =
+                    isActive || this.allIntentions[intentionIndex].isActive;
             }
 
             if (isActive) {
@@ -321,9 +371,12 @@ class Coordinator {
     }
 
     static getBestCoordinatedIntention(agentId) {
-        console.log("getBestCoordinatedIntention", agentId, this.allIntentions)
+        console.log("getBestCoordinatedIntention", agentId, this.allIntentions);
         const intention = this.allIntentions.find(
-            (i) => i.isActive === false && i.agentId === agentId && !this.isAlreadyActiveIntention(agentId, i.intention)
+            (i) =>
+                i.isActive === false &&
+                i.agentId === agentId &&
+                !this.isAlreadyActiveIntention(agentId, i.intention),
         );
 
         if (intention) {
@@ -332,16 +385,17 @@ class Coordinator {
         } else {
             return {
                 tile: this.getMap().getRandomTile(),
-                gain: 1
+                gain: 1,
             };
         }
-
     }
 
     static setIntentionStatus(intention, status) {
         for (const agentId of this.agents) {
             const intentionIndex = this.allIntentions.findIndex(
-                (i) => i.agentId === agentId && this.equalsIntention(i.intention, intention.intention)
+                (i) =>
+                    i.agentId === agentId &&
+                    this.equalsIntention(i.intention, intention.intention),
             );
 
             if (intentionIndex !== -1) {
@@ -351,7 +405,9 @@ class Coordinator {
     }
 
     static shiftAgentIntentions(agentId) {
-        const intentionIndex = this.allIntentions.findIndex((i) => i.agentId === agentId);
+        const intentionIndex = this.allIntentions.findIndex(
+            (i) => i.agentId === agentId,
+        );
         console.log("shiftAgentIntentions", agentId, intentionIndex);
         if (intentionIndex !== -1) {
             this.allIntentions = this.allIntentions.splice(intentionIndex, 1);
@@ -362,7 +418,9 @@ class Coordinator {
         console.log("removeCompletedIntention", intention);
         for (const agentId of this.agents.keys()) {
             const intentionIndex = this.allIntentions.findIndex(
-                (i) => i.agentId === agentId && Coordinator.equalsIntention(i.intention, intention)
+                (i) =>
+                    i.agentId === agentId &&
+                    Coordinator.equalsIntention(i.intention, intention),
             );
 
             if (intentionIndex !== -1) {
@@ -372,28 +430,48 @@ class Coordinator {
     }
 
     static coordinateIntentions() {
-        console.log("Start coordinateIntentions", this.allIntentions.length, this.allIntentions)
+        console.log(
+            "Start coordinateIntentions",
+            this.allIntentions.length,
+            this.allIntentions,
+        );
         // Keep actions with the highest gain for each agent without interference
         for (const agentId of this.agents) {
-            let agentIntentions = this.selectActions(this.allIntentions, agentId);
+            let agentIntentions = this.selectActions(
+                this.allIntentions,
+                agentId,
+            );
             this.allIntentions = this.allIntentions.concat(agentIntentions);
         }
 
         this.allIntentions = this.filterIntentionsByAgent();
 
-        this.allIntentions = this.allIntentions.sort((a, b) => b.intention.gain - a.intention.gain);
-        console.log("End coordinateIntentions", this.allIntentions.length, this.allIntentions)
+        this.allIntentions = this.allIntentions.sort(
+            (a, b) => b.intention.gain - a.intention.gain,
+        );
+        console.log(
+            "End coordinateIntentions",
+            this.allIntentions.length,
+            this.allIntentions,
+        );
     }
 
     static filterIntentionsByAgent() {
-        const activeIntentions = this.allIntentions.filter(intent => intent.isActive);
+        const activeIntentions = this.allIntentions.filter(
+            (intent) => intent.isActive,
+        );
 
         const inactiveIntentions = this.allIntentions
-            .filter(intent => !intent.isActive)
+            .filter((intent) => !intent.isActive)
             .reduce((acc, intention) => {
-                const existing = acc.find(item => item.intention.tile === intention.intention.tile);
+                const existing = acc.find(
+                    (item) => item.intention.tile === intention.intention.tile,
+                );
 
-                if (!existing || intention.intention.gain > existing.intention.gain) {
+                if (
+                    !existing ||
+                    intention.intention.gain > existing.intention.gain
+                ) {
                     if (existing) {
                         acc.splice(acc.indexOf(existing), 1);
                     }
@@ -415,35 +493,47 @@ class Coordinator {
             }
 
             // Check if the action interferes with any active action
-            const isInterference = allIntentions.some((selectedAction) =>
-                !this.equalsIntention(selectedAction.intention, intention.intention) &&
-                selectedAction.isActive &&
-                selectedAction.agentId !== agentId &&
-                this.checkIntentionInterference(intention.intention, selectedAction.intention)
+            const isInterference = allIntentions.some(
+                (selectedAction) =>
+                    !this.equalsIntention(
+                        selectedAction.intention,
+                        intention.intention,
+                    ) &&
+                    selectedAction.isActive &&
+                    selectedAction.agentId !== agentId &&
+                    this.checkIntentionInterference(
+                        intention.intention,
+                        selectedAction.intention,
+                    ),
             );
 
-            teamInference = this.checkTeamInterference(agentId, intention.intention);
+            teamInference = this.checkTeamInterference(
+                agentId,
+                intention.intention,
+            );
 
-            if (!isInterference &&
+            if (
+                !isInterference &&
                 !this.checkOpponentInterference(agentId, intention.intention) &&
-                !teamInference.existsIntersection) {
+                !teamInference.existsIntersection
+            ) {
                 selectedActions.push(intention);
-            } else if (!isInference &&
+            } else if (
+                !isInference &&
                 !intention.intention.parcel &&
-                teamInference.existsIntersection) {
+                teamInference.existsIntersection
+            ) {
                 const lastValidTile = teamInference.lastValidTile;
-                selectedActions.push(
-                    {
-                        agentId: agentId,
-                        intention: new Desire(
-                            lastValidTile,
-                            intention.intention.gain,
-                            null,
-                            true
-                        ),
-                        isActive: false
-                    }
-                );
+                selectedActions.push({
+                    agentId: agentId,
+                    intention: new Desire(
+                        lastValidTile,
+                        intention.intention.gain,
+                        null,
+                        true,
+                    ),
+                    isActive: false,
+                });
             }
         }
 
@@ -461,10 +551,13 @@ class Coordinator {
             visitedTiles.add(key);
 
             // Check if any agent is already on the current tile
-            const agentOnTile = Array.from(this.agents.entries())
-                .find(([agent, agentTile]) =>
-                    agent !== agentId && this.hasAgent(agent) &&
-                    agentTile.x === tile.x && agentTile.y === tile.y);
+            const agentOnTile = Array.from(this.agents.entries()).find(
+                ([agent, agentTile]) =>
+                    agent !== agentId &&
+                    this.hasAgent(agent) &&
+                    agentTile.x === tile.x &&
+                    agentTile.y === tile.y,
+            );
 
             if (!agentOnTile) {
                 lastValidTile = tile;
@@ -476,7 +569,7 @@ class Coordinator {
 
         return {
             existsIntersection: existsIntersection,
-            lastValidTile: lastValidTile
+            lastValidTile: lastValidTile,
         };
     }
 
@@ -520,7 +613,10 @@ class Coordinator {
             return false;
         }
 
-        const existsIntersection = this.checkPathIntersection(pathToA.path, pathToB.path);
+        const existsIntersection = this.checkPathIntersection(
+            pathToA.path,
+            pathToB.path,
+        );
 
         return existsIntersection;
     }

@@ -1,4 +1,4 @@
-import Coordinator from './coordinator.js';
+import Coordinator from "./coordinator.js";
 
 class Messages {
     static SEARCH_COORDINATOR = "search_coordinator";
@@ -13,53 +13,68 @@ class Messages {
 }
 
 class Communication {
-
     static args;
 
     static Agent = class {
-
         static coordinator = null;
 
         static async handle(client, id, name, msg, reply) {
             // reply = this.fixReply(client, reply);
             msg = this.fromJSON(msg);
-            if (msg.message == Messages.IM_COORDINATOR) {
+            if (msg.message === Messages.IM_COORDINATOR) {
                 this.coordinator = id;
-                console.log(name, 'is the coordinator');
+                console.log(name, "is the coordinator");
                 reply(this.toJSON(Messages.ACK));
             }
         }
 
         static async setCarrying(client, parcel) {
-            await client.ask(this.coordinator, this.toJSON(Messages.SET_CARRYING, parcel));
+            await client.ask(
+                this.coordinator,
+                this.toJSON(Messages.SET_CARRYING, parcel),
+            );
         }
 
         static async emptyCarrying(client, id) {
-            await client.ask(this.coordinator, this.toJSON(Messages.EMPTY_CARRYING, id));
+            await client.ask(
+                this.coordinator,
+                this.toJSON(Messages.EMPTY_CARRYING, id),
+            );
         }
-
 
         static searchCoordinator(client, info) {
             client.shout(this.toJSON(Messages.SEARCH_COORDINATOR, info));
         }
 
         static async sendBelief(client, belief) {
-            let res = await client.ask(this.coordinator, this.toJSON(Messages.AGENT_BELIEF, belief));
+            let res = await client.ask(
+                this.coordinator,
+                this.toJSON(Messages.AGENT_BELIEF, belief),
+            );
             res = JSON.parse(await res);
             return await res.args;
         }
 
         static async removeCompletedIntention(client, intention) {
-            await client.ask(this.coordinator, this.toJSON(Messages.REMOVE_INTENTION, intention));
+            await client.ask(
+                this.coordinator,
+                this.toJSON(Messages.REMOVE_INTENTION, intention),
+            );
         }
 
         static async setIntentionStatus(client, intention, status) {
-            await client.ask(this.coordinator, this.toJSON(Messages.SET_INTENTION_STATUS, { intention: intention, status: status }));
+            await client.ask(
+                this.coordinator,
+                this.toJSON(Messages.SET_INTENTION_STATUS, {
+                    intention: intention,
+                    status: status,
+                }),
+            );
         }
 
-        static fixReply(reply,client) {
+        static fixReply(reply, client) {
             if (reply) return reply;
-            else return this.customReply.bind({client: client})
+            else return this.customReply.bind({ client: client });
         }
 
         static customReply(id, msg) {
@@ -71,43 +86,47 @@ class Communication {
         }
 
         static toJSON(msg, args) {
-            if (args) msg = { message: msg, args: args }
+            if (args) msg = { message: msg, args: args };
             else msg = { message: msg };
             return JSON.stringify(msg);
         }
-    }
+    };
 
-    static Coordinator = class {
-            
-        static async handle(client, id, name, msg, reply)  {
+    static Coord = class {
+        static async handle(client, id, name, msg, reply) {
             // reply = this.fixReply(client, reply);
             msg = this.fromJSON(msg);
-            if (msg.message == Messages.SEARCH_COORDINATOR) {
+            if (msg.message === Messages.SEARCH_COORDINATOR) {
                 console.log("position", msg.args);
                 Coordinator.updateAgent(id, msg.args);
-                console.log(name, 'is searching for a coordinator');
+                console.log(name, "is searching for a coordinator");
                 await client.ask(id, this.toJSON(Messages.IM_COORDINATOR));
-            } else if (msg.message == Messages.AGENT_BELIEF) {
+            } else if (msg.message === Messages.AGENT_BELIEF) {
                 let perceivedParcels = msg.args.perceivedParcels;
                 let perceivedAgents = msg.args.perceivedAgents;
                 let carriedBy = msg.args.carriedBy;
+
+                Coordinator.updateAgent(id, msg.args);
 
                 Coordinator.addPerceivedParcels(perceivedParcels);
                 Coordinator.addPerceivedAgents(perceivedAgents);
 
                 Coordinator.computeAllDesires();
                 Coordinator.coordinateIntentions();
-                
+
                 let target = Coordinator.getBestCoordinatedIntention(id);
-                console.log(name, 'has intention', target);
+                console.log(name, "has intention", target);
                 reply(this.toJSON(Messages.INTENTION, target));
             } else if (msg.message == Messages.REMOVE_INTENTION) {
                 Coordinator.removeCompletedIntention(msg.args);
                 reply(this.toJSON(Messages.ACK));
             } else if (msg.message == Messages.SET_INTENTION_STATUS) {
-                Coordinator.setIntentionStatus(msg.args.intention, msg.args.status);
+                Coordinator.setIntentionStatus(
+                    msg.args.intention,
+                    msg.args.status,
+                );
                 reply(this.toJSON(Messages.ACK));
-            } else if(msg.message == Messages.EMPTY_CARRYING) {
+            } else if (msg.message == Messages.EMPTY_CARRYING) {
                 Coordinator.removeParcel(msg.args);
                 reply(this.toJSON(Messages.ACK));
             }
@@ -115,10 +134,11 @@ class Communication {
 
         static fixReply(client, reply) {
             if (reply) return reply;
-            else return (id, msg) => { 
-                console.log('sending', msg, 'to', client);
-                return client.ask(id, this.toJSON(msg));
-            };
+            else
+                return (id, msg) => {
+                    console.log("sending", msg, "to", client);
+                    return client.ask(id, this.toJSON(msg));
+                };
         }
 
         static fromJSON(msg) {
@@ -126,12 +146,11 @@ class Communication {
         }
 
         static toJSON(msg, args) {
-            if (args) msg = { message: msg, args: args }
+            if (args) msg = { message: msg, args: args };
             else msg = { message: msg };
             return JSON.stringify(msg);
         }
-
-    }
+    };
 }
 
 export default Communication;
