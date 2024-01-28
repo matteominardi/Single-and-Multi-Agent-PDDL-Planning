@@ -33,7 +33,7 @@ let patrolling = false;
 let failed = false;
 
 setTimeout(() => {
-    Communication.Agent.searchCoordinator(client, BeliefSet.getMe().getMyPosition());
+    Communication.Agent.searchCoordinator(client, BeliefSet.getMe());
  }, 1000);
 
 
@@ -46,7 +46,7 @@ setTimeout(async () => {
     }
 
     while (true) {
-        BeliefSet.decayParcelsReward();
+        // BeliefSet.decayParcelsReward();
         // Intentions.decayGains();
         // Intentions.filterGains();
         
@@ -59,19 +59,22 @@ setTimeout(async () => {
         // send perceived parcels and agents to coordinator and get intentions
         
 
-        let target = await Communication.Agent.sendBelief(client,
-                    {
-                        position: BeliefSet.getMe().tile,
-                        perceivedParcels: perceivedParcels,
-                        perceivedAgents: perceivedAgents
-            })
+        let target = await Communication.Agent.sendBelief(
+            client,
+            {
+                info: BeliefSet.getMe(),
+                perceivedParcels: perceivedParcels,
+                perceivedAgents: perceivedAgents,
+                carriedByMe: BeliefSet.getCarriedByMe(),
+            }
+        );
         
         Intentions.requestedIntention = target;
 
         console.log(agentId, "current target", target.tile.x, target.tile.y, target.gain);
         
         // let target = Coordinator.getBestCoordinatedIntention(agentId);
-        console.log(agentId, "new target", target.tile.x, target.tile.y, target.gain);
+        // console.log(agentId, "new target", target.tile.x, target.tile.y, target.gain);
 
         
         if (failed && Coordinator.equalsIntention(target, previousTarget)) {

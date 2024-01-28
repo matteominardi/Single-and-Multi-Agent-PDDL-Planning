@@ -7,6 +7,8 @@ class Messages {
     static INTENTION = "intention";
     static REMOVE_INTENTION = "remove_intention";
     static SET_INTENTION_STATUS = "set_intention_status";
+    static SET_CARRYING = "set_carrying";
+    static EMPTY_CARRYING = "empty_carrying";
     static ACK = "ack";
 }
 
@@ -28,8 +30,17 @@ class Communication {
             }
         }
 
-        static searchCoordinator(client, position) {
-            client.shout(this.toJSON(Messages.SEARCH_COORDINATOR, position));
+        static async setCarrying(client, parcel) {
+            await client.ask(this.coordinator, this.toJSON(Messages.SET_CARRYING, parcel));
+        }
+
+        static async emptyCarrying(client, id) {
+            await client.ask(this.coordinator, this.toJSON(Messages.EMPTY_CARRYING, id));
+        }
+
+
+        static searchCoordinator(client, info) {
+            client.shout(this.toJSON(Messages.SEARCH_COORDINATOR, info));
         }
 
         static async sendBelief(client, belief) {
@@ -79,7 +90,7 @@ class Communication {
             } else if (msg.message == Messages.AGENT_BELIEF) {
                 let perceivedParcels = msg.args.perceivedParcels;
                 let perceivedAgents = msg.args.perceivedAgents;
-
+                let carriedBy = msg.args.carriedBy;
 
                 Coordinator.addPerceivedParcels(perceivedParcels);
                 Coordinator.addPerceivedAgents(perceivedAgents);
@@ -95,6 +106,9 @@ class Communication {
                 reply(this.toJSON(Messages.ACK));
             } else if (msg.message == Messages.SET_INTENTION_STATUS) {
                 Coordinator.setIntentionStatus(msg.args.intention, msg.args.status);
+                reply(this.toJSON(Messages.ACK));
+            } else if(msg.message == Messages.EMPTY_CARRYING) {
+                Coordinator.removeParcel(msg.args);
                 reply(this.toJSON(Messages.ACK));
             }
         }

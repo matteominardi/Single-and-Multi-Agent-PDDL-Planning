@@ -2,6 +2,7 @@ import BeliefSet from "./belief.js";
 import { computeActions, computeDeliveryGain, computeParcelGain } from "./helpers.js";
 import Me from "./me.js";
 import { TileType } from "./world.js";
+import Communication from "./communication.js";
 
 class Intention {
     constructor(desire) {
@@ -78,9 +79,29 @@ class Intentions {
             const actions = computeActions(path.path);
             let failed = false;
 
-            // while (actions.length > 0 && !this.shouldStop) {
-            if (actions.length > 0 && !this.shouldStop) {
+            while (actions.length > 0 && !this.shouldStop) {
+            // if (actions.length > 0 && !this.shouldStop) {
                 const action = actions.shift();
+
+                // update beliefs
+                let newBest = await Communication.Agent.sendBelief(
+                    client,
+                    {
+                        info: BeliefSet.getMe(),
+                        perceivedParcels: Array.from(BeliefSet.getParcels()),
+                        perceivedAgents: Array.from(BeliefSet.getAgents()),
+                    }
+                );
+
+                if (
+                    this.requestedIntention.gain < newBest.gain &&
+                    (this.requestedIntention.tile.x !== newBest.tile.x || this.requestedIntention.tile.y !== newBest.tile.y)
+                ) {
+                    console.log("New intention found");
+                    Communication.Agent.setIntentionStatus(client, {agentId: BeliefSet.getMe().id, intention: this.requestedIntention, isActive: false}, false);
+                    return;
+                }
+
                 try {
                     await BeliefSet.getMe().do_action(client, action);
                 } catch (err) {
