@@ -26,7 +26,9 @@ client.onParcelsSensing((parcels) => updateParcels(parcels));
 client.onAgentsSensing((agents) => updateAgents(agents));
 client.onYou((me) => updateMe(me));
 client.onConfig((config) => updateConfig(config));
-client.onMsg((id, name, msg, reply) => Communication.Agent.handle(client, id, name, msg, reply));
+client.onMsg((id, name, msg, reply) =>
+    Communication.Agent.handle(client, id, name, msg, reply),
+);
 
 let previousTarget = null;
 let patrolling = false;
@@ -34,8 +36,7 @@ let failed = false;
 
 setTimeout(() => {
     Communication.Agent.searchCoordinator(client, BeliefSet.getMe());
- }, 1000);
-
+}, 1000);
 
 setTimeout(async () => {
     let agentId = BeliefSet.getMe().id;
@@ -49,50 +50,59 @@ setTimeout(async () => {
         // BeliefSet.decayParcelsReward();
         // Intentions.decayGains();
         // Intentions.filterGains();
-        
+
         let perceivedParcels = Array.from(BeliefSet.getParcels());
-        console.log(agentId, "perceivedParcels", perceivedParcels.length, perceivedParcels)
+        console.log(
+            agentId,
+            "perceivedParcels",
+            perceivedParcels.length,
+            perceivedParcels,
+        );
 
         let perceivedAgents = Array.from(BeliefSet.getAgents());
-        console.log(agentId, "perceivedAgents", perceivedAgents.length, perceivedAgents)
+        console.log(
+            agentId,
+            "perceivedAgents",
+            perceivedAgents.length,
+            perceivedAgents,
+        );
 
         // send perceived parcels and agents to coordinator and get intentions
-        
 
-        let target = await Communication.Agent.sendBelief(
-            client,
-            {
-                info: BeliefSet.getMe(),
-                perceivedParcels: perceivedParcels,
-                perceivedAgents: perceivedAgents,
-                carriedByMe: BeliefSet.getCarriedByMe(),
-            }
-        );
-        
+        let target = await Communication.Agent.sendBelief(client, {
+            info: BeliefSet.getMe(),
+            perceivedParcels: perceivedParcels,
+            perceivedAgents: perceivedAgents,
+            carriedByMe: BeliefSet.getCarriedByMe(),
+        });
+
         Intentions.requestedIntention = target;
 
-        console.log(agentId, "current target", target.tile.x, target.tile.y, target.gain);
-        
+        console.log(
+            agentId,
+            "current target",
+            target.tile.x,
+            target.tile.y,
+            target.gain,
+        );
+
         // let target = Coordinator.getBestCoordinatedIntention(agentId);
         // console.log(agentId, "new target", target.tile.x, target.tile.y, target.gain);
 
-        
         if (failed && Coordinator.equalsIntention(target, previousTarget)) {
             console.log(agentId, "swapping");
 
             Coordinator.shiftAgentIntentions(agentId);
             target = Coordinator.getBestCoordinatedIntention(agentId);
-            
+
             failed = false;
-        } 
+        }
 
-
-        
         if (BeliefSet.getCarriedByMe().length === 0) {
             if (!patrolling && target.gain <= 1) {
                 console.log(agentId, "started patrolling");
                 patrolling = true;
-            } else if (patrolling && target.gain <=1) {
+            } else if (patrolling && target.gain <= 1) {
                 console.log(agentId, "patrolling");
             } else if (patrolling && target.gain > 1) {
                 console.log(agentId, "stopped patrolling");
@@ -102,17 +112,26 @@ setTimeout(async () => {
 
         if (!previousTarget || !patrolling) {
             previousTarget = target;
-        } 
-        
+        }
+
         Intentions.requestedIntention = target;
 
-        await Intentions.achieve(client).then(() => {
-            Communication.Agent.removeCompletedIntention(client, target);
-        }).catch(error => {
-            console.log("Failed intention", error);
-            failed = true;
-            Communication.Agent.setIntentionStatus(client, {agentId: agentId, intention: target, isActive: true}, false);
-        });
+        await Intentions.achieve(client)
+            .then(async () => {
+                await Communication.Agent.removeCompletedIntention(
+                    client,
+                    target,
+                );
+            })
+            .catch(async (error) => {
+                console.log("Failed intention", error);
+                failed = true;
+                await Communication.Agent.setIntentionStatus(
+                    client,
+                    { agentId: agentId, intention: target, isActive: true },
+                    false,
+                );
+            });
         console.log("---------------------------------------------------");
         await sleep(500);
     }

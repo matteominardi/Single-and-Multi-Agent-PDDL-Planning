@@ -97,25 +97,37 @@ class TileMap {
         const neighbours = [];
         if (
             tile.x > 0 &&
-            this.tiles[tile.x - 1][tile.y].type !== TileType.EMPTY
+            this.tiles[tile.x - 1][tile.y].type !== TileType.EMPTY && // no agents
+            Array.from(BeliefSet.getAgents()).every(
+                (agent) => agent.x !== tile.x - 1 || agent.y !== tile.y,
+            )
         ) {
             neighbours.push(this.tiles[tile.x - 1][tile.y]);
         }
         if (
             tile.x < this.width - 1 &&
-            this.tiles[tile.x + 1][tile.y].type !== TileType.EMPTY
+            this.tiles[tile.x + 1][tile.y].type !== TileType.EMPTY &&
+            Array.from(BeliefSet.getAgents()).every(
+                (agent) => agent.x !== tile.x + 1 || agent.y !== tile.y,
+            )
         ) {
             neighbours.push(this.tiles[tile.x + 1][tile.y]);
         }
         if (
             tile.y > 0 &&
-            this.tiles[tile.x][tile.y - 1].type !== TileType.EMPTY
+            this.tiles[tile.x][tile.y - 1].type !== TileType.EMPTY &&
+            Array.from(BeliefSet.getAgents()).every(
+                (agent) => agent.x !== tile.x || agent.y !== tile.y - 1,
+            )
         ) {
             neighbours.push(this.tiles[tile.x][tile.y - 1]);
         }
         if (
             tile.y < this.height - 1 &&
-            this.tiles[tile.x][tile.y + 1].type !== TileType.EMPTY
+            this.tiles[tile.x][tile.y + 1].type !== TileType.EMPTY &&
+            Array.from(BeliefSet.getAgents()).every(
+                (agent) => agent.x !== tile.x || agent.y !== tile.y + 1,
+            )
         ) {
             neighbours.push(this.tiles[tile.x][tile.y + 1]);
         }

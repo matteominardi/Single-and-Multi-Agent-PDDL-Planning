@@ -56,39 +56,69 @@ class Me {
 
     async performAction(client, requestedIntention) {
         let currentTile = this.getMyPosition();
-        console.log("currentTile", currentTile.x, currentTile.y, currentTile.type)
-        console.log("my reward ", BeliefSet.getMyReward(), "getCarriedByMe", BeliefSet.getCarriedByMe().length)
+        console.log(
+            "currentTile",
+            currentTile.x,
+            currentTile.y,
+            currentTile.type,
+        );
+        console.log(
+            "my reward ",
+            BeliefSet.getMyReward(),
+            "getCarriedByMe",
+            BeliefSet.getCarriedByMe().length,
+        );
         let perceivedParcels = Array.from(BeliefSet.getParcels());
-        console.log("perceivedParcels", perceivedParcels.length, perceivedParcels)
-        if ((currentTile.type === TileType.DELIVERY && BeliefSet.getCarriedByMe().length > 0) || 
-            (requestedIntention.forcedDelivery && BeliefSet.getCarriedByMe().length > 0)) {
+        console.log(
+            "perceivedParcels",
+            perceivedParcels.length,
+            perceivedParcels,
+        );
+        if (
+            (currentTile.type === TileType.DELIVERY &&
+                BeliefSet.getCarriedByMe().length > 0) ||
+            (requestedIntention.forcedDelivery &&
+                BeliefSet.getCarriedByMe().length > 0)
+        ) {
             await this.do_action(client, Actions.PUT_DOWN);
             BeliefSet.emptyCarriedByMe();
             // TODO: not ideal because all agents in the Coordinator will ignore them
             for (let parcel in perceivedParcels) {
-                Communication.Agent.emptyCarrying(client, perceivedParcels[parcel].id);
+                await Communication.Agent.emptyCarrying(
+                    client,
+                    perceivedParcels[parcel].id,
+                );
                 // Coordinator.removeParcel(perceivedParcels[parcel].id);
             }
             // Communication.Agent.emptyCarrying();
         } else if (currentTile.type === TileType.NORMAL) {
             for (let parcel in perceivedParcels) {
-                if (BeliefSet.shouldConsiderParcel(perceivedParcels[parcel].id) &&
-                    perceivedParcels[parcel].carriedBy === null && 
-                    perceivedParcels[parcel].x === currentTile.x && 
-                    perceivedParcels[parcel].y === currentTile.y) { 
-                    console.log("Trying to pick up", perceivedParcels[parcel])
+                if (
+                    BeliefSet.shouldConsiderParcel(
+                        perceivedParcels[parcel].id,
+                    ) &&
+                    perceivedParcels[parcel].carriedBy === null &&
+                    perceivedParcels[parcel].x === currentTile.x &&
+                    perceivedParcels[parcel].y === currentTile.y
+                ) {
+                    console.log("Trying to pick up", perceivedParcels[parcel]);
                     await this.do_action(client, Actions.PICKUP);
-                    
+
                     BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
-                    Intentions.queue = Intentions.queue.filter(
-                        (d) => (d.parcel ? d.parcel.id !== perceivedParcels[parcel].id : true),
+                    Intentions.queue = Intentions.queue.filter((d) =>
+                        d.parcel
+                            ? d.parcel.id !== perceivedParcels[parcel].id
+                            : true,
                     );
                     break;
                 }
             }
         }
         Intentions.queue = Intentions.queue.filter(
-            (d) => d.tile !== currentTile && d.gain > 0 && (d.parcel ? d.parcel.reward > 0 : true),
+            (d) =>
+                d.tile !== currentTile &&
+                d.gain > 0 &&
+                (d.parcel ? d.parcel.reward > 0 : true),
         );
     }
 
