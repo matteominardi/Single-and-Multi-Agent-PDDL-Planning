@@ -110,6 +110,14 @@ class Me {
                             ? d.parcel.id !== perceivedParcels[parcel].id
                             : true,
                     );
+                    await Communication.Agent.removeCompletedIntention(
+                        client,
+                        {
+                            "tile": currentTile,
+                            "gain": 1,
+                            "parcel": perceivedParcels[parcel]
+                        },
+                    );
                     break;
                 }
             }

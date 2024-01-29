@@ -88,6 +88,12 @@ class Coordinator {
         }
     }
 
+    static removeDeliveryIntentions() {
+        this.allIntentions = this.allIntentions.filter(
+            (i) => i.intention.tile.type !== TileType.DELIVERY,
+        );
+    }
+
     static shouldConsiderParcel(parcelId) {
         return this.ignoredParcels.getParcel(parcelId) === null;
     }
@@ -167,7 +173,7 @@ class Coordinator {
             options.push(new Desire(this.getMap().getRandomTile(), 1));
         }
         // options.sort((a, b) => b.gain - a.gain); // best first
-        console.log("Computed desires for agent", agentId, options);
+        // console.log("Computed desires for agent", agentId, options);
         this.addAgentIntentions(agentId, options);
     }
 
@@ -216,23 +222,23 @@ class Coordinator {
         const distance = this.distanceBetween(myPos, deliverySpot);
         score += this.getAgentReward(agentId); // agentId carrying
         score -= gonnaCarry * factor * distance; // me + parcel decading
-        console.log(
-            "carrying",
-            agentId,
-            this.agents.get(agentId),
-            this.getAgentReward(agentId),
-            gonnaCarry,
-        );
-        console.log(
-            "delivery",
-            deliverySpot.x,
-            deliverySpot.y,
-            this.agents.get(agentId).last_x,
-            this.agents.get(agentId).last_y,
-            myPos,
-            distance,
-            score,
-        );
+        // console.log(
+        //     "carrying",
+        //     agentId,
+        //     this.agents.get(agentId),
+        //     this.getAgentReward(agentId),
+        //     gonnaCarry,
+        // );
+        // console.log(
+        //     "delivery",
+        //     deliverySpot.x,
+        //     deliverySpot.y,
+        //     this.agents.get(agentId).last_x,
+        //     this.agents.get(agentId).last_y,
+        //     myPos,
+        //     distance,
+        //     score,
+        // );
 
         return score;
     }
@@ -371,7 +377,7 @@ class Coordinator {
     }
 
     static getBestCoordinatedIntention(agentId) {
-        console.log("getBestCoordinatedIntention", agentId, this.allIntentions);
+        // console.log("getBestCoordinatedIntention", agentId, this.allIntentions);
         const intention = this.allIntentions.find(
             (i) =>
                 i.isActive === false &&
@@ -408,14 +414,14 @@ class Coordinator {
         const intentionIndex = this.allIntentions.findIndex(
             (i) => i.agentId === agentId,
         );
-        console.log("shiftAgentIntentions", agentId, intentionIndex);
+        // console.log("shiftAgentIntentions", agentId, intentionIndex);
         if (intentionIndex !== -1) {
             this.allIntentions = this.allIntentions.splice(intentionIndex, 1);
         }
     }
 
     static removeCompletedIntention(intention) {
-        console.log("removeCompletedIntention", intention);
+        // console.log("removeCompletedIntention", intention);
         for (const agentId of this.agents.keys()) {
             const intentionIndex = this.allIntentions.findIndex(
                 (i) =>
@@ -430,11 +436,11 @@ class Coordinator {
     }
 
     static coordinateIntentions() {
-        console.log(
-            "Start coordinateIntentions",
-            this.allIntentions.length,
-            this.allIntentions,
-        );
+        // console.log(
+        //     "Start coordinateIntentions",
+        //     this.allIntentions.length,
+        //     this.allIntentions,
+        // );
         // Keep actions with the highest gain for each agent without interference
         for (const agentId of this.agents) {
             let agentIntentions = this.selectActions(
@@ -449,11 +455,11 @@ class Coordinator {
         this.allIntentions = this.allIntentions.sort(
             (a, b) => b.intention.gain - a.intention.gain,
         );
-        console.log(
-            "End coordinateIntentions",
-            this.allIntentions.length,
-            this.allIntentions,
-        );
+        // console.log(
+        //     "End coordinateIntentions",
+        //     this.allIntentions.length,
+        //     this.allIntentions,
+        // );
     }
 
     static filterIntentionsByAgent() {

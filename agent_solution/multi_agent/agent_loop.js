@@ -52,20 +52,20 @@ setTimeout(async () => {
         // Intentions.filterGains();
 
         let perceivedParcels = Array.from(BeliefSet.getParcels());
-        console.log(
-            agentId,
-            "perceivedParcels",
-            perceivedParcels.length,
-            perceivedParcels,
-        );
+        // console.log(
+        //     agentId,
+        //     "perceivedParcels",
+        //     perceivedParcels.length,
+        //     perceivedParcels,
+        // );
 
         let perceivedAgents = Array.from(BeliefSet.getAgents());
-        console.log(
-            agentId,
-            "perceivedAgents",
-            perceivedAgents.length,
-            perceivedAgents,
-        );
+        // console.log(
+        //     agentId,
+        //     "perceivedAgents",
+        //     perceivedAgents.length,
+        //     perceivedAgents,
+        // );
 
         // send perceived parcels and agents to coordinator and get intentions
 
@@ -78,13 +78,13 @@ setTimeout(async () => {
 
         Intentions.requestedIntention = target;
 
-        console.log(
-            agentId,
-            "current target",
-            target.tile.x,
-            target.tile.y,
-            target.gain,
-        );
+        // console.log(
+        //     agentId,
+        //     "current target",
+        //     target.tile.x,
+        //     target.tile.y,
+        //     target.gain,
+        // );
 
         // let target = Coordinator.getBestCoordinatedIntention(agentId);
         // console.log(agentId, "new target", target.tile.x, target.tile.y, target.gain);
@@ -133,7 +133,7 @@ setTimeout(async () => {
                 );
             });
         console.log("---------------------------------------------------");
-        await sleep(500);
+        // await sleep(500);
     }
 }, 2000);
 

@@ -128,6 +128,7 @@ class Communication {
                 reply(this.toJSON(Messages.ACK));
             } else if (msg.message == Messages.EMPTY_CARRYING) {
                 Coordinator.removeParcel(msg.args);
+                Coordinator.removeDeliveryIntentions();
                 reply(this.toJSON(Messages.ACK));
             }
         }

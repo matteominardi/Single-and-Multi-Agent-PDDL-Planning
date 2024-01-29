@@ -101,7 +101,6 @@ class Intentions {
                     Communication.Agent.setIntentionStatus(client, {agentId: BeliefSet.getMe().id, intention: this.requestedIntention, isActive: false}, false);
                     return;
                 }
-
                 try {
                     await BeliefSet.getMe().do_action(client, action);
                 } catch (err) {
@@ -109,6 +108,8 @@ class Intentions {
                     failed = true;
                     throw err;
                 }
+
+                await BeliefSet.getMe().performAction(client, this.requestedIntention)
             }
 
             if (this.shouldStop) {
