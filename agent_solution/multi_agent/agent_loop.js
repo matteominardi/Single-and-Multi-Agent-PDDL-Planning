@@ -82,17 +82,6 @@ setTimeout(async () => {
 
         Intentions.requestedIntention = target;
 
-        // console.log(
-        //     agentId,
-        //     "current target",
-        //     target.tile.x,
-        //     target.tile.y,
-        //     target.gain,
-        // );
-
-        // let target = Coordinator.getBestCoordinatedIntention(agentId);
-        // console.log(agentId, "new target", target.tile.x, target.tile.y, target.gain);
-
         if (failed && Coordinator.equalsIntention(target, previousTarget)) {
             console.log(agentId, "swapping");
 
@@ -119,11 +108,17 @@ setTimeout(async () => {
 
         Intentions.requestedIntention = target;
 
+        await Communication.Agent.setIntentionStatus(
+            client,
+            { agentId: agentId, intention: Intentions.requestedIntention, isActive: true },
+            false,
+        );
+
         await Intentions.achieve(client)
             .then(async () => {
                 await Communication.Agent.removeCompletedIntention(
                     client,
-                    target,
+                    Intentions.requestedIntention,
                 );
             })
             .catch(async (error) => {
@@ -131,12 +126,11 @@ setTimeout(async () => {
                 failed = true;
                 await Communication.Agent.setIntentionStatus(
                     client,
-                    { agentId: agentId, intention: target, isActive: true },
+                    { agentId: agentId, intention: Intentions.requestedIntention, isActive: true },
                     false,
                 );
             });
-        console.log("---------------------------------------------------");
-        // await sleep(500);
+        await sleep(500);
     }
 }, 2000);
 

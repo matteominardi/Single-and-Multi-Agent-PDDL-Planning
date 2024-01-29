@@ -124,10 +124,10 @@ class Communication {
                 Coordinator.ignoreOpponentsParcels();
 
                 Coordinator.computeAllDesires();
-                Coordinator.coordinateIntentions();
+                // Coordinator.coordinateIntentions();
 
                 let target = Coordinator.getBestCoordinatedIntention(id);
-                console.log(name, "has intention", target);
+                // console.log(name, "has intention", target);
                 reply(this.toJSON(Messages.INTENTION, target));
             } else if (msg.message == Messages.SWAP_INTENTION) {
                 let target = Coordinator.shiftAgentIntentions(id, msg.args);

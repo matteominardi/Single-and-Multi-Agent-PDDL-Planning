@@ -335,7 +335,10 @@ class Coordinator {
                 Coordinator.allIntentions[intentionIndex].intention.gain = desire.gain;
             }
         }
-
+        // console.log("Computed intentions after agent", agentId);
+        // for (const intent of Coordinator.allIntentions) {
+        //     console.log("intention", intent.intention.tile.x, intent.intention.tile.y, intent.intention.gain);
+        // }
         // this.allIntentions.sort((a, b) => b.intention.gain - a.intention.gain);
     }
 
@@ -379,6 +382,10 @@ class Coordinator {
                 i.agentId === agentId &&
                 !Coordinator.isAlreadyActiveIntention(agentId, i.intention),
         );
+
+        console.log("\n\ngetBestCoordinatedIntention", agentId, intention);
+        console.log(Coordinator.allIntentions)
+        // console.log("intention ", intention.intention.tile.x, intention.intention.tile.y, intention.intention.gain);
 
         if (intention) {
             Coordinator.setIntentionStatus(intention, true);
@@ -449,6 +456,16 @@ class Coordinator {
         Coordinator.allIntentions = Coordinator.allIntentions.sort(
             (a, b) => b.intention.gain - a.intention.gain,
         );
+
+        console.log("Computed coordinated intentions");
+        for (const intent of Coordinator.allIntentions) {
+            console.log(
+                "intention",
+                intent.intention.tile.x,
+                intent.intention.tile.y,
+                intent.intention.gain,
+            );
+        }
     }
 
     static filterIntentionsByAgent() {

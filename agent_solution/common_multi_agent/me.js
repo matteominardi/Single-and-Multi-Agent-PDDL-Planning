@@ -56,18 +56,6 @@ class Me {
 
     async performAction(client, requestedIntention) {
         let currentTile = this.getMyPosition();
-        console.log(
-            "currentTile",
-            currentTile.x,
-            currentTile.y,
-            currentTile.type,
-        );
-        console.log(
-            "my reward ",
-            BeliefSet.getMyReward(),
-            "getCarriedByMe",
-            BeliefSet.getCarriedByMe().length,
-        );
         let perceivedParcels = Array.from(BeliefSet.getParcels());
         perceivedParcels = perceivedParcels.filter(
             (parcel) => parcel.reward > 2,

@@ -3,6 +3,7 @@ import { computeActions, computeDeliveryGain, computeParcelGain } from "./helper
 import Me from "./me.js";
 import { TileType } from "./world.js";
 import Communication from "./communication.js";
+import { sleep } from "../common_multi_agent/helpers.js";
 
 class Intention {
     constructor(desire) {
@@ -74,15 +75,26 @@ class Intentions {
             throw "error";
         }
         
-        const path = Me.pathTo(this.requestedIntention.tile);
+        let path = Me.pathTo(this.requestedIntention.tile);
         
         if (path.status === "success") {
-            const actions = computeActions(path.path);
+            let actions = computeActions(path.path);
             let failed = false;
 
             while (actions.length > 0 && !this.shouldStop) {
-            // if (actions.length > 0 && !this.shouldStop) {
+                console.log("---------------------------------------------------");
                 const action = actions.shift();
+                    
+                try {
+                    await BeliefSet.getMe().do_action(client, action);
+                    await BeliefSet.getMe().performAction(client, this.requestedIntention)
+                } catch (err) {
+                    console.log("Failed intention", err);
+                    failed = true;
+                    this.success = false;
+                    this.shouldStop = true;
+                    throw "error";
+                }
 
                 // update beliefs
                 let newBest = await Communication.Agent.sendBelief(
@@ -91,44 +103,60 @@ class Intentions {
                         info: BeliefSet.getMe(),
                         perceivedParcels: Array.from(BeliefSet.getParcels()),
                         perceivedAgents: Array.from(BeliefSet.getAgents()),
+                        carriedByMe: BeliefSet.getCarriedByMe(),
                     }
                 );
+                console.log(BeliefSet.getMe(), newBest)
 
                 if (
                     this.requestedIntention.gain < newBest.gain &&
                     (this.requestedIntention.tile.x !== newBest.tile.x || this.requestedIntention.tile.y !== newBest.tile.y)
                 ) {
                     console.log("New intention found");
-                    // Communication.Agent.setIntentionStatus(client, {agentId: BeliefSet.getMe().id, intention: this.requestedIntention, isActive: false}, false);
-                    this.shouldStop = true;
-                    failed = true;
-                    this.success = false;
-                    throw "error";
-                }
-                try {
-                    await BeliefSet.getMe().do_action(client, action);
-                    await BeliefSet.getMe().performAction(client, this.requestedIntention)
-                } catch (err) {
-                    this.shouldStop = true;
-                    failed = true;
-                    this.success = false;
-                    throw err;
+
+                    await Communication.Agent.setIntentionStatus(
+                        client,
+                        {
+                            agentId: BeliefSet.getMe().id, 
+                            intention: this.requestedIntention, 
+                            isActive: true, 
+                            forcedDelivery: false
+                        },
+                        false,
+                    );
+                    
+                    this.requestedIntention = newBest;
+                    this.shouldStop = false;
+                    path = Me.pathTo(this.requestedIntention.tile);
+                    actions = computeActions(path.path);
+                } else {
+                    await Communication.Agent.setIntentionStatus(
+                        client,
+                        {
+                            agentId: BeliefSet.getMe().id, 
+                            intention: newBest, 
+                            isActive: true,
+                            forcedDelivery: false
+                        },
+                        false,
+                    );
                 }
             }
 
-            if (this.shouldStop) {
-                console.log(BeliefSet.getMe().id, "stopped before reaching target", this.requestedIntention.tile);
-                this.shouldStop = true;
-                failed = true;
-                this.success = false;
-                throw "error";
-            }
+            // if (this.shouldStop || failed) {
+            //     console.log(BeliefSet.getMe().id, "stopped before reaching target", this.requestedIntention.tile);
+            //     this.shouldStop = true;
+            //     failed = true;
+            //     this.success = false;
+            //     throw "error";
+            // }
             
             if (!failed) {
                 console.log(BeliefSet.getMe().id, "target tile reached!");      
                 await BeliefSet.getMe().performAction(client, this.requestedIntention);
                 failed = false;
                 this.success = true;
+                return Promise.resolve();
             }
         } else {
             throw "Path not found";
