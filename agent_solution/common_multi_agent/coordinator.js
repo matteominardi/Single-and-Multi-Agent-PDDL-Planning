@@ -88,6 +88,19 @@ class Coordinator {
         }
     }
 
+    static ignoreOpponentsParcels() {
+        for (const agent of this.allPerceivedAgents) {
+            if (!this.hasAgent(agent.id)) {
+                for (const parcel of this.allPerceivedParcels) {
+                    if ((parcel.carriedBy === null && parcel.x === agent.x && parcel.y === agent.y) || 
+                        (parcel.carriedBy === agent.id)) {
+                        this.removeParcel(parcel.id);
+                    }
+                }
+            }
+        }
+    }
+
     static removeDeliveryIntentions() {
         this.allIntentions = this.allIntentions.filter(
             (i) => i.intention.tile.type !== TileType.DELIVERY,

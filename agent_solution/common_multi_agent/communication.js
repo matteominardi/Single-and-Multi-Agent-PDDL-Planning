@@ -111,6 +111,8 @@ class Communication {
                 Coordinator.addPerceivedParcels(perceivedParcels);
                 Coordinator.addPerceivedAgents(perceivedAgents);
 
+                Coordinator.ignoreOpponentsParcels();
+
                 Coordinator.computeAllDesires();
                 Coordinator.coordinateIntentions();
 
