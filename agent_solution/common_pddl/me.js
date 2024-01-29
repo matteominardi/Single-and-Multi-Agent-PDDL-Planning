@@ -57,9 +57,6 @@ class Me {
         console.log("currentTile", currentTile.x, currentTile.y, currentTile.type)
         console.log("my reward ", BeliefSet.getMyReward(), "getCarriedByMe", BeliefSet.getCarriedByMe().length)
         let perceivedParcels = Array.from(BeliefSet.getParcels());
-        perceivedParcels = perceivedParcels.filter(
-            (parcel) => parcel.reward > 2,
-        );
         console.log("perceivedParcels", perceivedParcels.length, perceivedParcels)
         if (currentTile.type === TileType.DELIVERY && BeliefSet.getCarriedByMe().length > 0) {
             await this.do_action(client, Actions.PUT_DOWN);

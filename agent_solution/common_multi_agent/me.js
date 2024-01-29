@@ -69,6 +69,9 @@ class Me {
             BeliefSet.getCarriedByMe().length,
         );
         let perceivedParcels = Array.from(BeliefSet.getParcels());
+        perceivedParcels = perceivedParcels.filter(
+            (parcel) => parcel.reward > 2,
+        );
         console.log(
             "perceivedParcels",
             perceivedParcels.length,
