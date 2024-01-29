@@ -70,7 +70,8 @@ class Intentions {
         if (this.shouldStop) {
             console.log(BeliefSet.getMe().id, "stopped before going to target", this.requestedIntention.tile);
             this.shouldStop = false;
-            return;
+            this.success = false;
+            throw "error";
         }
         
         const path = Me.pathTo(this.requestedIntention.tile);
@@ -98,29 +99,35 @@ class Intentions {
                     (this.requestedIntention.tile.x !== newBest.tile.x || this.requestedIntention.tile.y !== newBest.tile.y)
                 ) {
                     console.log("New intention found");
-                    Communication.Agent.setIntentionStatus(client, {agentId: BeliefSet.getMe().id, intention: this.requestedIntention, isActive: false}, false);
-                    return;
+                    // Communication.Agent.setIntentionStatus(client, {agentId: BeliefSet.getMe().id, intention: this.requestedIntention, isActive: false}, false);
+                    this.shouldStop = true;
+                    failed = true;
+                    this.success = false;
+                    throw "error";
                 }
                 try {
                     await BeliefSet.getMe().do_action(client, action);
+                    await BeliefSet.getMe().performAction(client, this.requestedIntention)
                 } catch (err) {
-                    console.log(err);
+                    this.shouldStop = true;
                     failed = true;
+                    this.success = false;
                     throw err;
                 }
-
-                await BeliefSet.getMe().performAction(client, this.requestedIntention)
             }
 
             if (this.shouldStop) {
                 console.log(BeliefSet.getMe().id, "stopped before reaching target", this.requestedIntention.tile);
-                this.shouldStop = false;
-                return;
+                this.shouldStop = true;
+                failed = true;
+                this.success = false;
+                throw "error";
             }
             
             if (!failed) {
                 console.log(BeliefSet.getMe().id, "target tile reached!");      
                 await BeliefSet.getMe().performAction(client, this.requestedIntention);
+                failed = false;
                 this.success = true;
             }
         } else {
