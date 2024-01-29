@@ -52,6 +52,10 @@ setTimeout(async () => {
         // Intentions.filterGains();
 
         let perceivedParcels = Array.from(BeliefSet.getParcels());
+        perceivedParcels = perceivedParcels.filter(
+            (parcel) => parcel.reward > 2,
+        );
+
         // console.log(
         //     agentId,
         //     "perceivedParcels",
@@ -92,8 +96,7 @@ setTimeout(async () => {
         if (failed && Coordinator.equalsIntention(target, previousTarget)) {
             console.log(agentId, "swapping");
 
-            Coordinator.shiftAgentIntentions(agentId);
-            target = Coordinator.getBestCoordinatedIntention(agentId);
+            target = await Communication.Agent.swapIntention(client, target);
 
             failed = false;
         }

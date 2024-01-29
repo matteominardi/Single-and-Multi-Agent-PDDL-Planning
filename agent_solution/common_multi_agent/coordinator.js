@@ -390,7 +390,8 @@ class Coordinator {
     }
 
     static getBestCoordinatedIntention(agentId) {
-        // console.log("getBestCoordinatedIntention", agentId, this.allIntentions);
+        Coordinator.coordinateIntentions();
+        
         const intention = this.allIntentions.find(
             (i) =>
                 i.isActive === false &&
@@ -402,35 +403,49 @@ class Coordinator {
             this.setIntentionStatus(intention, true);
             return intention.intention;
         } else {
-            return {
-                tile: this.getMap().getRandomTile(),
-                gain: 1,
-            };
+            return new Desire(
+                Coordinator.getRandomTile(),
+                2,
+                null,
+                false,
+            ); 
         }
     }
 
+
+    static getRandomTile() {
+        let tile = null;
+        while (tile === null || tile.type === TileType.EMPTY) {
+            let x = Math.floor(Math.random() * Coordinator.getMap().width);
+            let y = Math.floor(Math.random() * Coordinator.getMap().height);
+            tile = Coordinator.getMap().tiles[x][y];
+        }
+        return tile;
+    }
+
     static setIntentionStatus(intention, status) {
-        for (const agentId of this.agents) {
+        for (const agentId of this.agents.keys()) {
             const intentionIndex = this.allIntentions.findIndex(
                 (i) =>
                     i.agentId === agentId &&
                     this.equalsIntention(i.intention, intention.intention),
             );
-
             if (intentionIndex !== -1) {
                 this.allIntentions[intentionIndex].isActive = status;
             }
         }
     }
 
-    static shiftAgentIntentions(agentId) {
+    static shiftAgentIntentions(agentId, previousIntention) {
         const intentionIndex = this.allIntentions.findIndex(
-            (i) => i.agentId === agentId,
+            (i) => i.agentId === agentId && i.isActive === true,
         );
         // console.log("shiftAgentIntentions", agentId, intentionIndex);
         if (intentionIndex !== -1) {
             this.allIntentions = this.allIntentions.splice(intentionIndex, 1);
         }
+        
+        return Coordinator.getBestCoordinatedIntention(agentId);
     }
 
     static removeCompletedIntention(intention) {

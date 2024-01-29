@@ -113,9 +113,9 @@ class Me {
                     await Communication.Agent.removeCompletedIntention(
                         client,
                         {
-                            "tile": currentTile,
-                            "gain": 1,
-                            "parcel": perceivedParcels[parcel]
+                            tile: currentTile,
+                            gain: 1,
+                            parcel: perceivedParcels[parcel]
                         },
                     );
                     break;

@@ -5,6 +5,7 @@ class Messages {
     static IM_COORDINATOR = "im_coordinator";
     static AGENT_BELIEF = "agent_belief";
     static INTENTION = "intention";
+    static SWAP_INTENTION = "swap_intention";
     static REMOVE_INTENTION = "remove_intention";
     static SET_INTENTION_STATUS = "set_intention_status";
     static SET_CARRYING = "set_carrying";
@@ -50,6 +51,15 @@ class Communication {
             let res = await client.ask(
                 this.coordinator,
                 this.toJSON(Messages.AGENT_BELIEF, belief),
+            );
+            res = JSON.parse(await res);
+            return await res.args;
+        }
+
+        static async swapIntention(client, intention) {
+            let res = await client.ask(
+                this.coordinator,
+                this.toJSON(Messages.SWAP_INTENTION, intention),
             );
             res = JSON.parse(await res);
             return await res.args;
@@ -119,7 +129,10 @@ class Communication {
                 let target = Coordinator.getBestCoordinatedIntention(id);
                 console.log(name, "has intention", target);
                 reply(this.toJSON(Messages.INTENTION, target));
-            } else if (msg.message == Messages.REMOVE_INTENTION) {
+            } else if (msg.message == Messages.SWAP_INTENTION) {
+                let target = Coordinator.shiftAgentIntentions(id, msg.args);
+                reply(this.toJSON(Messages.INTENTION, target));
+            }else if (msg.message == Messages.REMOVE_INTENTION) {
                 Coordinator.removeCompletedIntention(msg.args);
                 reply(this.toJSON(Messages.ACK));
             } else if (msg.message == Messages.SET_INTENTION_STATUS) {
