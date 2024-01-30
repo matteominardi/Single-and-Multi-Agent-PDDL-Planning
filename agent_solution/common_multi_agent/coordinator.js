@@ -90,6 +90,10 @@ class Coordinator {
                 ),
             );
         }
+
+        Coordinator.allPerceivedParcels = Coordinator.allPerceivedParcels.filter(
+            (p) => p.id !== parcelId,
+        );
     }
 
     static ignoreOpponentsParcels() {
@@ -181,6 +185,7 @@ class Coordinator {
                             deliverySpots[d].y,
                         ),
                         score,
+                        null
                     ),
                 );
             }
@@ -203,13 +208,13 @@ class Coordinator {
             Coordinator.getConfig().MOVEMENT_DURATION /
             Coordinator.getConfig().PARCEL_DECADING_INTERVAL;
 
-        let myPos = Coordinator.getMap().getTile(
-            Coordinator.agents.get(agentId).last_x,
-            Coordinator.agents.get(agentId).last_y,
-        );
+        const agentPosition = {
+            x: Math.round(Coordinator.agents.get(agentId).last_x),
+            y: Math.round(Coordinator.agents.get(agentId).last_y),
+        };
 
         const parcelDistance = Coordinator.distanceBetween(
-            myPos,
+            agentPosition,
             Coordinator.getMap().getTile(parcel.x, parcel.y),
         );
         const closestDeliverySpotDistance = Coordinator.distanceBetween(
@@ -232,11 +237,11 @@ class Coordinator {
             0.01 +
             Coordinator.getConfig().MOVEMENT_DURATION /
             Coordinator.getConfig().PARCEL_DECADING_INTERVAL;
-        let myPos = Coordinator.getMap().getTile(
-            Coordinator.agents.get(agentId).last_x,
-            Coordinator.agents.get(agentId).last_y,
-        );
-        const distance = Coordinator.distanceBetween(myPos, deliverySpot);
+        const agentPosition = {
+            x: Math.round(Coordinator.agents.get(agentId).last_x),
+            y: Math.round(Coordinator.agents.get(agentId).last_y),
+        };
+        const distance = Coordinator.distanceBetween(agentPosition, deliverySpot);
         score += Coordinator.getAgentReward(agentId); // agentId carrying
         score -= gonnaCarry * factor * distance; // me + parcel decading
 
@@ -393,10 +398,13 @@ class Coordinator {
 
         if (intention) {
             Coordinator.setIntentionStatus(intention, true);
+            Coordinator.currentAgentGoal = intention.intention.tile;
             return intention.intention;
         } else {
+            let randomTile = Coordinator.getRandomTile();
+            Coordinator.currentAgentGoal = randomTile;
             return new Desire(
-                Coordinator.getRandomTile(),
+                randomTile,
                 2,
                 null,
                 false,
@@ -508,6 +516,19 @@ class Coordinator {
                 continue;
             }
 
+            const agentPosition = {
+                x: Math.round(Coordinator.agents.get(agentId).last_x),
+                y: Math.round(Coordinator.agents.get(agentId).last_y),
+            };
+    
+            Coordinator.currentAgentGoal = intention.intention.tile;
+    
+            let path = Coordinator.computePath(agentPosition);
+    
+            if (path.status !== "success") {
+                continue;
+            }
+
             // Check if the action interferes with any active action
             const isInterference = allIntentions.some(
                 (selectedAction) =>
@@ -523,23 +544,21 @@ class Coordinator {
                     ),
             );
 
-            let teamInference = Coordinator.checkTeamInterference(
-                agentId,
-                intention.intention,
-            );
+            let teamInterference = Coordinator.checkTeamInterference(agentId, path);
 
             if (
                 !isInterference &&
-                !Coordinator.checkOpponentInterference(agentId, intention.intention) &&
-                !teamInference.existsIntersection
+                // !Coordinator.checkOpponentInterference(agentId, intention.intention) &&
+                !Coordinator.checkOpponentInterference(agentId, path) &&
+                !teamInterference.existsIntersection
             ) {
                 selectedActions.push(intention);
             } else if (
                 !isInterference &&
                 !intention.intention.parcel &&
-                teamInference.existsIntersection
+                teamInterference.existsIntersection
             ) {
-                const lastValidTile = teamInference.lastValidTile;
+                const lastValidTile = teamInterference.lastValidTile;
                 selectedActions.push({
                     agentId: agentId,
                     intention: new Desire(
@@ -583,23 +602,7 @@ class Coordinator {
         );
     }
 
-    static checkTeamInterference(agentId, intention) {
-        const agentPosition = {
-            x: Math.round(Coordinator.agents.get(agentId).last_x),
-            y: Math.round(Coordinator.agents.get(agentId).last_y),
-        };
-
-        Coordinator.currentAgentGoal = intention.tile;
-
-        let path = Coordinator.computePath(agentPosition);
-
-        if (path.status !== "success") {
-            return {
-                existsIntersection: false,
-                lastValidTile: Coordinator.getMap().getTile(Coordinator.agents.get(agentId).last_x, Coordinator.agents.get(agentId).last_y)
-            };
-        }
-
+    static checkTeamInterference(agentId, path) {
         path = path.path;
 
         const visitedTiles = new Set();
@@ -614,9 +617,8 @@ class Coordinator {
             const agentOnTile = Array.from(Coordinator.agents.entries()).find(
                 ([agent, agentTile]) =>
                     agent !== agentId &&
-                    Coordinator.hasAgent(agent) &&
-                    agentTile.x === tile.x &&
-                    agentTile.y === tile.y,
+                    agentTile.last_x === tile.x &&
+                    agentTile.last_x === tile.y,
             );
 
             if (!agentOnTile) {
@@ -633,23 +635,7 @@ class Coordinator {
         };
     }
 
-    static checkOpponentInterference(agentId, intention) {
-        const agentPosition = {
-            x: Math.round(Coordinator.agents.get(agentId).last_x),
-            y: Math.round(Coordinator.agents.get(agentId).last_y),
-        };
-
-        Coordinator.currentAgentGoal = intention.tile;
-
-        let path = Coordinator.computePath(agentPosition);
-
-        if (path.status !== "success") {
-            return {
-                existsIntersection: false,
-                lastValidTile: Coordinator.getMap().getTile(Coordinator.agents.get(agentId).last_x, Coordinator.agents.get(agentId).last_y)
-            };
-        }
-
+    static checkOpponentInterference(agentId, path) {
         path = path.path;
 
         const visitedTiles = new Set();
@@ -662,10 +648,9 @@ class Coordinator {
 
         // Iterate over the perceived agents and check if any tile is not available
         for (const agent of Coordinator.allPerceivedAgents) {
-            if (agent.id === agentId || Coordinator.hasAgent(agent.id)) {
+            if (agent.name === "god" || agent.id === agentId || Coordinator.hasAgent(agent.id)) {
                 continue;
             }
-
             const key = `${agent.x},${agent.y}`;
 
             if (visitedTiles.has(key)) {
@@ -674,7 +659,6 @@ class Coordinator {
                 break;
             }
         }
-
         return existsIntersection;
     }
 
@@ -683,8 +667,18 @@ class Coordinator {
             return true;
         }
 
-        const pathToA = Me.pathTo(intentionA.tile);
-        const pathToB = Me.pathTo(intentionB.tile);
+        const agentPosition = {
+            x: Math.round(Coordinator.agents.get(agentId).last_x),
+            y: Math.round(Coordinator.agents.get(agentId).last_y),
+        };
+
+        Coordinator.currentAgentGoal = intentionA.tile;
+        let pathToA = Coordinator.computePath(agentPosition);
+
+        Coordinator.currentAgentGoal = intentionB.tile;
+        let pathToB = Coordinator.computePath(agentPosition);
+
+        Coordinator.currentAgentGoal = intentionA.tile;
 
         if (pathToA.status !== "success" || pathToB.status !== "success") {
             return false;
