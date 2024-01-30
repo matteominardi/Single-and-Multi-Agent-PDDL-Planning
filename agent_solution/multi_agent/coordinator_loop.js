@@ -13,7 +13,7 @@ import { sleep } from "../common_multi_agent/helpers.js";
 // Mattia
 const client = new DeliverooApi(
     "http://localhost:8080",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijk1ZTcxNWU2MmIxIiwibmFtZSI6Im1hdHRpYSIsImlhdCI6MTcwNTk2MzU1OX0.OwsNVldhSc2tIKBJoUy0ZgrltSt-2RoTzKvB1lPquxc",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjhmNjg4NTk5NDcwIiwibmFtZSI6ImdvZCIsImlhdCI6MTcwNjYwOTM2NH0.RYdwf01AMss2eIY0pNveMuS1VBc3rHrjxIhxJIeQC8Y",
 );
 
 client.onMsg((id, name, msg, reply) =>

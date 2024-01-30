@@ -2,7 +2,6 @@ import BeliefSet from "./belief.js";
 import { getPath } from "./helpers.js";
 import { Intentions } from "./intentions.js";
 import { TileType } from "./world.js";
-import Coordinator from "./coordinator.js";
 import Communication from "./communication.js";
 
 const Actions = {

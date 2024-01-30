@@ -4,9 +4,13 @@ import { TileType } from "./world.js";
 import { Parcels, Parcel } from "./parcel.js";
 import { TileMap } from "./world.js";
 import { Desire } from "./desires.js";
+import { hash } from "./helpers.js";
+import aStar from "a-star";
+
 class Coordinator {
     static map = null;
     static agents = new Map(); // used to store the position of the known agents
+    static currentAgentGoal = null;
     static ignoredParcels = new Parcels(); // used to store the parcels that should not be considered anymore
     static allPerceivedParcels = []; // used to store all the perceived parcels by all agents
     static allPerceivedAgents = []; // used to store all the perceived agents by all agents
@@ -443,7 +447,7 @@ class Coordinator {
     }
 
     static coordinateIntentions() {
-        for (const agentId of Coordinator.agents) {
+        for (const agentId of Coordinator.agents.keys()) {
             let agentIntentions = Coordinator.selectActions(
                 Coordinator.allIntentions,
                 agentId,
@@ -519,7 +523,7 @@ class Coordinator {
                     ),
             );
 
-            teamInference = Coordinator.checkTeamInterference(
+            let teamInference = Coordinator.checkTeamInterference(
                 agentId,
                 intention.intention,
             );
@@ -531,7 +535,7 @@ class Coordinator {
             ) {
                 selectedActions.push(intention);
             } else if (
-                !isInference &&
+                !isInterference &&
                 !intention.intention.parcel &&
                 teamInference.existsIntersection
             ) {
@@ -552,8 +556,52 @@ class Coordinator {
         return selectedActions;
     }
 
+    static computePath(start) {
+        const options = {
+            start: start,
+            isEnd: Coordinator.isEnd,
+            neighbor: Coordinator.getNeighbors,
+            distance: Coordinator.distanceBetween,
+            heuristic: Coordinator.heuristic,
+            hash: hash,
+        };
+        return aStar(options);
+    }
+
+    static isEnd(tile) {
+        const end = Coordinator.getMap().getTile(Coordinator.currentAgentGoal.x, Coordinator.currentAgentGoal.y);
+        return end.x === tile.x && end.y === tile.y;
+    }
+
+    static getNeighbors(tile) {
+        return Coordinator.getMap().getNeighbours(tile);
+    }
+
+    static heuristic(tile) {
+        return (
+            Math.abs(tile.x - Coordinator.currentAgentGoal.x) + Math.abs(tile.y - Coordinator.currentAgentGoal.y)
+        );
+    }
+
     static checkTeamInterference(agentId, intention) {
-        const path = Me.pathTo(intention.tile);
+        const agentPosition = {
+            x: Math.round(Coordinator.agents.get(agentId).last_x),
+            y: Math.round(Coordinator.agents.get(agentId).last_y),
+        };
+
+        Coordinator.currentAgentGoal = intention.tile;
+
+        let path = Coordinator.computePath(agentPosition);
+
+        if (path.status !== "success") {
+            return {
+                existsIntersection: false,
+                lastValidTile: Coordinator.getMap().getTile(Coordinator.agents.get(agentId).last_x, Coordinator.agents.get(agentId).last_y)
+            };
+        }
+
+        path = path.path;
+
         const visitedTiles = new Set();
         let lastValidTile = null;
         let existsIntersection = false;
@@ -586,7 +634,24 @@ class Coordinator {
     }
 
     static checkOpponentInterference(agentId, intention) {
-        const path = Me.pathTo(intention.tile);
+        const agentPosition = {
+            x: Math.round(Coordinator.agents.get(agentId).last_x),
+            y: Math.round(Coordinator.agents.get(agentId).last_y),
+        };
+
+        Coordinator.currentAgentGoal = intention.tile;
+
+        let path = Coordinator.computePath(agentPosition);
+
+        if (path.status !== "success") {
+            return {
+                existsIntersection: false,
+                lastValidTile: Coordinator.getMap().getTile(Coordinator.agents.get(agentId).last_x, Coordinator.agents.get(agentId).last_y)
+            };
+        }
+
+        path = path.path;
+
         const visitedTiles = new Set();
         let existsIntersection = false;
 

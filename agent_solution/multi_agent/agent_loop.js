@@ -85,28 +85,28 @@ setTimeout(async () => {
         if (failed && Coordinator.equalsIntention(target, previousTarget)) {
             console.log(agentId, "swapping");
 
-            target = await Communication.Agent.swapIntention(client, target);
+            Intentions.requestedIntention = await Communication.Agent.swapIntention(client, Intentions.requestedIntention);
 
             failed = false;
         }
 
         if (BeliefSet.getCarriedByMe().length === 0) {
-            if (!patrolling && target.gain <= 1) {
+            if (!patrolling && Intentions.requestedIntention.gain <= 1) {
                 console.log(agentId, "started patrolling");
                 patrolling = true;
-            } else if (patrolling && target.gain <= 1) {
+            } else if (patrolling && Intentions.requestedIntention.gain <= 1) {
                 console.log(agentId, "patrolling");
-            } else if (patrolling && target.gain > 1) {
+            } else if (patrolling && Intentions.requestedIntention.gain > 1) {
                 console.log(agentId, "stopped patrolling");
                 patrolling = false;
             }
         }
 
         if (!previousTarget || !patrolling) {
-            previousTarget = target;
+            previousTarget = Intentions.requestedIntention;
         }
 
-        Intentions.requestedIntention = target;
+        // Intentions.requestedIntention = target;
 
         await Communication.Agent.setIntentionStatus(
             client,
@@ -116,13 +116,14 @@ setTimeout(async () => {
 
         await Intentions.achieve(client)
             .then(async () => {
+                console.log("Sono nel then");
                 await Communication.Agent.removeCompletedIntention(
                     client,
                     Intentions.requestedIntention,
                 );
             })
             .catch(async (error) => {
-                console.log("Failed intention", error);
+                console.log("Sono nel catch", error);
                 failed = true;
                 await Communication.Agent.setIntentionStatus(
                     client,
@@ -130,7 +131,7 @@ setTimeout(async () => {
                     false,
                 );
             });
-        await sleep(500);
+        // await sleep(500);
     }
 }, 2000);
 

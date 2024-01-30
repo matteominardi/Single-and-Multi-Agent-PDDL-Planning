@@ -96,4 +96,4 @@ function computeDeliveryGain(deliverySpot) {
 
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
-export { getPath, isEnd, distanceBetween, computeActions, computeParcelGain, computeDeliveryGain, sleep };
+export { getPath, isEnd, distanceBetween, computeActions, computeParcelGain, computeDeliveryGain, sleep, hash };

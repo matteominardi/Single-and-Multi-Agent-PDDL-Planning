@@ -87,7 +87,6 @@ class Intentions {
                     
                 try {
                     await BeliefSet.getMe().do_action(client, action);
-                    await BeliefSet.getMe().performAction(client, this.requestedIntention)
                 } catch (err) {
                     console.log("Failed intention", err);
                     failed = true;
