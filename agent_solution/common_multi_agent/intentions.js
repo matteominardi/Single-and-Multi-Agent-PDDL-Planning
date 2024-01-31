@@ -68,13 +68,14 @@ class Intentions {
     }
 
     static async achieve(client) {
-        if (this.shouldStop) {
-            console.log(BeliefSet.getMe().id, "stopped before going to target", this.requestedIntention.tile);
-            this.shouldStop = false;
-            this.success = false;
-            throw "error";
-        }
+        // if (this.shouldStop) {
+        //     console.log(BeliefSet.getMe().id, "stopped before going to target", this.requestedIntention.tile);
+        //     this.shouldStop = false;
+        //     this.success = false;
+        //     throw "error";
+        // }
         
+        // TODO: understand why this.requestedIntention is null sometimes
         let path = Me.pathTo(this.requestedIntention.tile);
         
         if (path.status === "success") {
@@ -85,19 +86,20 @@ class Intentions {
 
             while (actions.length > 0) {
                 console.log("---------------------------------------------------");
-                const action = actions.shift();
-                    
-                try {
-                    await BeliefSet.getMe().do_action(client, action);
-                } catch (err) {
-                    console.log("Failed intention", err);
-                    failed = true;
-                    this.success = false;
-                    this.shouldStop = true;
-                    throw "error";
+                if (this.shouldStop === false) {
+                    const action = actions.shift();
+                        
+                    try {
+                        await BeliefSet.getMe().do_action(client, action);
+                    } catch (err) {
+                        console.log("Failed movement", err);
+                        failed = true;
+                        this.success = false;
+                        this.shouldStop = true;
+                        throw "error";
+                    }
                 }
 
-                // update beliefs
                 let newBest = await Communication.Agent.sendBelief(
                     client,
                     {
@@ -107,6 +109,7 @@ class Intentions {
                         carriedByMe: BeliefSet.getCarriedByMe(),
                     }
                 );
+
                 console.log(BeliefSet.getMe(), newBest)
 
                 if (
@@ -118,19 +121,25 @@ class Intentions {
 
                     await Communication.Agent.setIntentionStatus(
                         client,
-                        JSON.stringify({
+                        {
                             agentId: BeliefSet.getMe().id, 
                             intention: this.requestedIntention, 
                             isActive: true, 
                             forcedDelivery: false
-                        }),
+                        },
                         false,
                     );
                     
                     this.requestedIntention = newBest;
                     this.shouldStop = false;
+                    
                     path = Me.pathTo(this.requestedIntention.tile);
-                    actions = computeActions(path.path);
+                    
+                    if (path.status === "success") {
+                        actions = computeActions(path.path);
+                    } else {
+                        throw "Path not found";
+                    }
                 } else {
                     await Communication.Agent.setIntentionStatus(
                         client,

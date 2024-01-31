@@ -18,7 +18,7 @@ console.log("Starting agent2 Luca");
 console.log("Connecting to", process.env.URL);
 
 const client = new DeliverooApi(process.env.URL, 
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwN2UyYzc2YWIwIiwibmFtZSI6Imx1Y2EiLCJpYXQiOjE3MDY1MzU3NTl9.2EgjTXD1N1v63d7odm-mcLqp83NDVX05r6WVytFwiRU"
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImJlMGRmNmI4ODAzIiwibmFtZSI6Im1hdHRpYSIsImlhdCI6MTcwNjcxNzM5NH0.3-ejlC6XG3ZtCKmda6nXeAKdqrBJ9yHNKvAbBNQjkfc"
 );
 
 client.onMap((w, h, tiles) => initMap(w, h, tiles));
@@ -46,6 +46,8 @@ setTimeout(async () => {
         return;
     }
 
+    Communication.Agent.agentId = agentId;
+
     while (true) {
         // BeliefSet.decayParcelsReward();
         // Intentions.decayGains();
@@ -64,14 +66,14 @@ setTimeout(async () => {
             perceivedAgents: perceivedAgents,
             carriedByMe: BeliefSet.getCarriedByMe(),
         });
-        console.log("client2 received target ", target);
+
         Intentions.requestedIntention = target;
-        console.log("client2 updated intention ", Intentions.requestedIntention);
+
         if (failed && Coordinator.equalsIntention(target, previousTarget)) {
-            console.log(agentId, "swapping");
+            console.log(agentId, "swapping", Intentions.requestedIntention, previousTarget);
 
             Intentions.requestedIntention = await Communication.Agent.swapIntention(client, Intentions.requestedIntention);
-
+            console.log("obtained after swapping", Intentions.requestedIntention);
             failed = false;
         }
 
@@ -91,11 +93,15 @@ setTimeout(async () => {
             previousTarget = Intentions.requestedIntention;
         }
 
-        await Communication.Agent.setIntentionStatus(
-            client,
-            { agentId: agentId, intention: Intentions.requestedIntention, isActive: true },
-            false,
-        );
+        // await Communication.Agent.setIntentionStatus(
+        //     client,
+        //     { 
+        //         agentId: agentId, 
+        //         intention: Intentions.requestedIntention, 
+        //         isActive: true 
+        //     },
+        //     false,
+        // );
 
         await Intentions.achieve(client)
         .then(async () => {
@@ -110,7 +116,11 @@ setTimeout(async () => {
             failed = true;
             await Communication.Agent.setIntentionStatus(
                 client,
-                { agentId: agentId, intention: Intentions.requestedIntention, isActive: true },
+                { 
+                    agentId: agentId, 
+                    intention: Intentions.requestedIntention, 
+                    isActive: true 
+                },
                 false,
             );
         });

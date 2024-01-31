@@ -47,7 +47,7 @@ class Coordinator {
     }
 
     static equalsIntention(intentionDesireA, intentionDesireB) {
-        console.log("dentro eualsintentino ", intentionDesireA, intentionDesireB)
+        // console.log("dentro eualsintentino ", intentionDesireA, intentionDesireB)
         return (
             intentionDesireA.tile.x === intentionDesireB.tile.x &&
             intentionDesireA.tile.y === intentionDesireB.tile.y
@@ -423,26 +423,27 @@ class Coordinator {
                 !Coordinator.isAlreadyActiveIntention(agentId, i.intention),
         );
 
-        console.log("\n\ngetBestCoordinatedIntention", agentId, intention);
+        // console.log("\n\ngetBestCoordinatedIntention", agentId, intention);
         if (intention && intention.intention && intention.intention.tile) {
-            console.log("in coordinator", intention, intention.intention.tile)
             Coordinator.setIntentionStatus(intention, true);
             Coordinator.currentAgentGoal = intention.intention.tile;
             Coordinator.lockIntention(agentId);
-
-            await Communication.Coord.stopAgentIntention(client, agentId, Coordinator.currentAgentGoal);
-            console.log("coordintor torna ", intention.intention)
+            Communication.Coord.stopAgentIntention(client, agentId, intention.intention);
+            
             return intention.intention;
         } else {
-            let randomTile = Coordinator.getRandomTile();
-            Coordinator.currentAgentGoal = randomTile;
-            console.log("coordintor torna random ", intention.intention)
-            return new Desire(
-                randomTile,
+            let randomIntention = new Desire(
+                Coordinator.getRandomTile(),
                 1,
                 null,
                 false,
-            ); 
+            );
+            
+            Coordinator.currentAgentGoal = randomIntention.tile;
+            Coordinator.lockIntention(agentId);
+            Communication.Coord.stopAgentIntention(client, agentId, randomIntention);
+            
+            return randomIntention; 
         }
     }
 
@@ -465,7 +466,7 @@ class Coordinator {
     }
 
     static setIntentionStatus(intention, status) {
-        console.log("setto intention status ", intention, "con desire ", intention.intention)
+        // console.log("setto intention status ", intention, "con desire ", intention.intention)
         for (const agentId of Coordinator.agents.keys()) {
             const intentionIndex = Coordinator.allIntentions.findIndex(
                 (i) =>
@@ -531,23 +532,23 @@ class Coordinator {
             (a, b) => b.intention.gain - a.intention.gain,
         );
 
-        console.log("Computed coordinated intentions");
-        for (const intent of Coordinator.allIntentions) {
-            console.log(
-                "intention from ",
-                Coordinator.agents.get(intent.agentId).last_x,
-                Coordinator.agents.get(intent.agentId).last_y,
-                " to ",
-                intent
-            );
-            console.log(intent.intention);
-            console.log(
-                intent.intention,
-                intent.intention.tile.x,
-                intent.intention.tile.y,
-                intent.intention.gain,
-            );
-        }
+        // console.log("Computed coordinated intentions");
+        // for (const intent of Coordinator.allIntentions) {
+        //     console.log(
+        //         "intention from ",
+        //         Coordinator.agents.get(intent.agentId).last_x,
+        //         Coordinator.agents.get(intent.agentId).last_y,
+        //         " to ",
+        //         intent
+        //     );
+        //     console.log(intent.intention);
+        //     console.log(
+        //         intent.intention,
+        //         intent.intention.tile.x,
+        //         intent.intention.tile.y,
+        //         intent.intention.gain,
+        //     );
+        // }
     }
 
     static filterIntentionsByAgent() {

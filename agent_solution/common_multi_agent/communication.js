@@ -20,6 +20,7 @@ class Communication {
 
     static Agent = class {
         static coordinator = null;
+        static agentId;
 
         static async handle(client, id, name, msg, reply) {
             // reply = this.fixReply(client, reply);
@@ -29,8 +30,15 @@ class Communication {
                 console.log(name, "is the coordinator");
                 reply(this.toJSON(Messages.ACK));
             } else if (msg.message === Messages.STOP_INTENTION) {
-                Intentions.shouldStop = true;
-                reply(this.toJSON(Messages.ACK));
+                console.log("Impossible ", msg.args.intention, Intentions.requestedIntention);
+                if (msg.args.agentId !== this.agentId && 
+                    Intentions.requestedIntention &&
+                    Coordinator.equalsIntention(msg.args.intention, Intentions.requestedIntention)
+                ) {
+                    Intentions.shouldStop = true;
+                } else {
+                    Intentions.shouldStop = false;
+                }
             }
         }
 
@@ -78,7 +86,7 @@ class Communication {
         }
 
         static async setIntentionStatus(client, intention, status) {
-            console.log("setting intention status", intention, status);
+            // console.log("setting intention status", intention, status);
             await client.ask(
                 this.coordinator,
                 this.toJSON(Messages.SET_INTENTION_STATUS, {
@@ -123,16 +131,18 @@ class Communication {
                 let carriedBy = msg.args.carriedBy;
 
                 Coordinator.updateAgent(id, msg.args.info);
-
+                
                 Coordinator.addPerceivedParcels(perceivedParcels);
                 Coordinator.addPerceivedAgents(perceivedAgents);
-
+                
                 Coordinator.ignoreOpponentsParcels();
+                Coordinator.decayAllIntentionGains();
 
                 Coordinator.computeAllDesires();
                 // Coordinator.coordinateIntentions();
 
-                let target = Coordinator.getBestCoordinatedIntention(client, id);
+                let target = await Coordinator.getBestCoordinatedIntention(client, id);
+                // console.log("Communication target ", target);
                 // console.log(name, "has intention", target);
                 reply(this.toJSON(Messages.INTENTION, target));
             } else if (msg.message == Messages.SWAP_INTENTION) {
@@ -174,9 +184,8 @@ class Communication {
         }
 
         static async stopAgentIntention(client, id, intention) {
-            await client.ask(
-                id,
-                this.toJSON(Messages.STOP_INTENTION, intention),
+            await client.shout(
+                this.toJSON(Messages.STOP_INTENTION, {agentId: id, intention: intention}),
             );
         }
     };

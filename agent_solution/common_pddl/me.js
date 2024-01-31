@@ -104,11 +104,9 @@ class Me {
         } else if (action === Actions.PICKUP) {
             await client.pickup();
             console.log("Pickup successful");
-            // TODO: add to inventory
         } else if (action === Actions.PUT_DOWN) {
             client.putdown();
             console.log("Put down successful");
-            // TODO: remove all from inventory
         }
     }
 

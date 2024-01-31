@@ -46,6 +46,8 @@ setTimeout(async () => {
         return;
     }
 
+    Communication.Agent.agentId = agentId;
+
     while (true) {
         // BeliefSet.decayParcelsReward();
         // Intentions.decayGains();
@@ -57,7 +59,7 @@ setTimeout(async () => {
         );
 
         let perceivedAgents = Array.from(BeliefSet.getAgents());
-       
+        
         let target = await Communication.Agent.sendBelief(client, {
             info: BeliefSet.getMe(),
             perceivedParcels: perceivedParcels,
@@ -67,8 +69,8 @@ setTimeout(async () => {
         
         Intentions.requestedIntention = target;
 
-        if (failed && previousTarget && Coordinator.equalsIntention(target, previousTarget)) {
-            console.log(agentId, "swapping");
+        if (failed && Coordinator.equalsIntention(target, previousTarget)) {
+            console.log(agentId, "swapping", Intentions.requestedIntention, previousTarget);
 
             Intentions.requestedIntention = await Communication.Agent.swapIntention(client, Intentions.requestedIntention);
 
@@ -91,15 +93,18 @@ setTimeout(async () => {
             previousTarget = Intentions.requestedIntention;
         }
 
-        await Communication.Agent.setIntentionStatus(
-            client,
-            { agentId: agentId, intention: Intentions.requestedIntention, isActive: true },
-            false,
-        );
+        // await Communication.Agent.setIntentionStatus(
+        //     client,
+        //     { 
+        //         agentId: agentId, 
+        //         intention: Intentions.requestedIntention, 
+        //         isActive: true 
+        //     },
+        //     false,
+        // );
 
         await Intentions.achieve(client)
         .then(async () => {
-            console.log("Sono nel then");
             await Communication.Agent.removeCompletedIntention(
                 client,
                 Intentions.requestedIntention,
@@ -110,7 +115,11 @@ setTimeout(async () => {
             failed = true;
             await Communication.Agent.setIntentionStatus(
                 client,
-                { agentId: agentId, intention: Intentions.requestedIntention, isActive: true },
+                { 
+                    agentId: agentId, 
+                    intention: Intentions.requestedIntention, 
+                    isActive: true 
+                },
                 false,
             );
         });
