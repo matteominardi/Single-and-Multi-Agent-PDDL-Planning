@@ -57,36 +57,32 @@ class Me {
         let currentTile = this.getMyPosition();
         let perceivedParcels = Array.from(BeliefSet.getParcels());
         perceivedParcels = perceivedParcels.filter(
-            (parcel) => parcel.reward > 2,
+            (parcel) => parcel.reward > 1,
         );
-        console.log(
-            "perceivedParcels",
-            perceivedParcels.length,
-            perceivedParcels,
-        );
+        let carriedByMe = BeliefSet.getCarriedByMe();
         if (
-            (currentTile.type === TileType.DELIVERY &&
-                BeliefSet.getCarriedByMe().length > 0) ||
-            (requestedIntention.forcedDelivery &&
-                BeliefSet.getCarriedByMe().length > 0)
+            requestedIntention.forcedDelivery === false && 
+            currentTile.type === TileType.DELIVERY &&
+            carriedByMe.length > 0
         ) {
             await this.do_action(client, Actions.PUT_DOWN);
             BeliefSet.emptyCarriedByMe();
-            // TODO: not ideal because all agents in the Coordinator will ignore them
-            for (let parcel in perceivedParcels) {
+            for (let parcel in carriedByMe) {
                 await Communication.Agent.emptyCarrying(
                     client,
-                    perceivedParcels[parcel].id,
+                    carriedByMe[parcel].id,
                 );
-                // Coordinator.removeParcel(perceivedParcels[parcel].id);
             }
-            // Communication.Agent.emptyCarrying();
+        } else if (
+            requestedIntention.forcedDelivery === true &&
+            carriedByMe.length > 0
+        ) {
+            await this.do_action(client, Actions.PUT_DOWN);
+            BeliefSet.emptyCarriedByMe();          
         } else if (currentTile.type === TileType.NORMAL) {
             for (let parcel in perceivedParcels) {
                 if (
-                    BeliefSet.shouldConsiderParcel(
-                        perceivedParcels[parcel].id,
-                    ) &&
+                    BeliefSet.shouldConsiderParcel(perceivedParcels[parcel].id) &&
                     perceivedParcels[parcel].carriedBy === null &&
                     perceivedParcels[parcel].x === currentTile.x &&
                     perceivedParcels[parcel].y === currentTile.y

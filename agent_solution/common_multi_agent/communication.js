@@ -1,4 +1,5 @@
 import Coordinator from "./coordinator.js";
+import { Intentions } from "./intentions.js";
 
 class Messages {
     static SEARCH_COORDINATOR = "search_coordinator";
@@ -6,6 +7,7 @@ class Messages {
     static AGENT_BELIEF = "agent_belief";
     static INTENTION = "intention";
     static SWAP_INTENTION = "swap_intention";
+    static STOP_INTENTION = "stop_intention";
     static REMOVE_INTENTION = "remove_intention";
     static SET_INTENTION_STATUS = "set_intention_status";
     static SET_CARRYING = "set_carrying";
@@ -25,6 +27,9 @@ class Communication {
             if (msg.message === Messages.IM_COORDINATOR) {
                 this.coordinator = id;
                 console.log(name, "is the coordinator");
+                reply(this.toJSON(Messages.ACK));
+            } else if (msg.message === Messages.STOP_INTENTION) {
+                Intentions.shouldStop = true;
                 reply(this.toJSON(Messages.ACK));
             }
         }
@@ -73,6 +78,7 @@ class Communication {
         }
 
         static async setIntentionStatus(client, intention, status) {
+            console.log("setting intention status", intention, status);
             await client.ask(
                 this.coordinator,
                 this.toJSON(Messages.SET_INTENTION_STATUS, {
@@ -126,11 +132,11 @@ class Communication {
                 Coordinator.computeAllDesires();
                 // Coordinator.coordinateIntentions();
 
-                let target = Coordinator.getBestCoordinatedIntention(id);
+                let target = Coordinator.getBestCoordinatedIntention(client, id);
                 // console.log(name, "has intention", target);
                 reply(this.toJSON(Messages.INTENTION, target));
             } else if (msg.message == Messages.SWAP_INTENTION) {
-                let target = Coordinator.shiftAgentIntentions(id, msg.args);
+                let target = Coordinator.shiftAgentIntentions(client, id, msg.args);
                 reply(this.toJSON(Messages.INTENTION, target));
             }else if (msg.message == Messages.REMOVE_INTENTION) {
                 Coordinator.removeCompletedIntention(msg.args);
@@ -142,8 +148,8 @@ class Communication {
                 );
                 reply(this.toJSON(Messages.ACK));
             } else if (msg.message == Messages.EMPTY_CARRYING) {
-                Coordinator.removeParcel(msg.args);
-                Coordinator.removeDeliveryIntentions();
+                Coordinator.removeParcel(id, msg.args);
+                Coordinator.removeDeliveryIntentions(id);
                 reply(this.toJSON(Messages.ACK));
             }
         }
@@ -165,6 +171,13 @@ class Communication {
             if (args) msg = { message: msg, args: args };
             else msg = { message: msg };
             return JSON.stringify(msg);
+        }
+
+        static async stopAgentIntention(client, id, intention) {
+            await client.ask(
+                id,
+                this.toJSON(Messages.STOP_INTENTION, intention),
+            );
         }
     };
 }

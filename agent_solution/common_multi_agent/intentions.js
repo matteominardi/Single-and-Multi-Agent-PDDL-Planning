@@ -81,7 +81,9 @@ class Intentions {
             let actions = computeActions(path.path);
             let failed = false;
 
-            while (actions.length > 0 && !this.shouldStop) {
+            this.shouldStop = false;
+
+            while (actions.length > 0) {
                 console.log("---------------------------------------------------");
                 const action = actions.shift();
                     
@@ -108,19 +110,20 @@ class Intentions {
                 console.log(BeliefSet.getMe(), newBest)
 
                 if (
-                    this.requestedIntention.gain < newBest.gain &&
-                    (this.requestedIntention.tile.x !== newBest.tile.x || this.requestedIntention.tile.y !== newBest.tile.y)
+                    this.shouldStop || 
+                    (this.requestedIntention.gain < newBest.gain &&
+                    (this.requestedIntention.tile.x !== newBest.tile.x || this.requestedIntention.tile.y !== newBest.tile.y))
                 ) {
                     console.log("New intention found");
 
                     await Communication.Agent.setIntentionStatus(
                         client,
-                        {
+                        JSON.stringify({
                             agentId: BeliefSet.getMe().id, 
                             intention: this.requestedIntention, 
                             isActive: true, 
                             forcedDelivery: false
-                        },
+                        }),
                         false,
                     );
                     

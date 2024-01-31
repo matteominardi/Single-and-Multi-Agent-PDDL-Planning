@@ -14,12 +14,12 @@ import {
 } from "./callbacks.js";
 
 dotenv.config();
-
-console.log("Starting agent", process.env.TOKEN);
-
+console.log("Starting agent2 Luca");
 console.log("Connecting to", process.env.URL);
 
-const client = new DeliverooApi(process.env.URL, process.env.TOKEN);
+const client = new DeliverooApi(process.env.URL, 
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwN2UyYzc2YWIwIiwibmFtZSI6Imx1Y2EiLCJpYXQiOjE3MDY1MzU3NTl9.2EgjTXD1N1v63d7odm-mcLqp83NDVX05r6WVytFwiRU"
+);
 
 client.onMap((w, h, tiles) => initMap(w, h, tiles));
 client.onParcelsSensing((parcels) => updateParcels(parcels));
@@ -56,32 +56,17 @@ setTimeout(async () => {
             (parcel) => parcel.reward > 2,
         );
 
-        // console.log(
-        //     agentId,
-        //     "perceivedParcels",
-        //     perceivedParcels.length,
-        //     perceivedParcels,
-        // );
-
         let perceivedAgents = Array.from(BeliefSet.getAgents());
-        // console.log(
-        //     agentId,
-        //     "perceivedAgents",
-        //     perceivedAgents.length,
-        //     perceivedAgents,
-        // );
-
-        // send perceived parcels and agents to coordinator and get intentions
-
+        
         let target = await Communication.Agent.sendBelief(client, {
             info: BeliefSet.getMe(),
             perceivedParcels: perceivedParcels,
             perceivedAgents: perceivedAgents,
             carriedByMe: BeliefSet.getCarriedByMe(),
         });
-
+        console.log("client2 received target ", target);
         Intentions.requestedIntention = target;
-
+        console.log("client2 updated intention ", Intentions.requestedIntention);
         if (failed && Coordinator.equalsIntention(target, previousTarget)) {
             console.log(agentId, "swapping");
 
@@ -106,8 +91,6 @@ setTimeout(async () => {
             previousTarget = Intentions.requestedIntention;
         }
 
-        // Intentions.requestedIntention = target;
-
         await Communication.Agent.setIntentionStatus(
             client,
             { agentId: agentId, intention: Intentions.requestedIntention, isActive: true },
@@ -115,23 +98,22 @@ setTimeout(async () => {
         );
 
         await Intentions.achieve(client)
-            .then(async () => {
-                console.log("Sono nel then");
-                await Communication.Agent.removeCompletedIntention(
-                    client,
-                    Intentions.requestedIntention,
-                );
-            })
-            .catch(async (error) => {
-                console.log("Sono nel catch", error);
-                failed = true;
-                await Communication.Agent.setIntentionStatus(
-                    client,
-                    { agentId: agentId, intention: Intentions.requestedIntention, isActive: true },
-                    false,
-                );
-            });
-        // await sleep(500);
+        .then(async () => {
+            console.log("Sono nel then");
+            await Communication.Agent.removeCompletedIntention(
+                client,
+                Intentions.requestedIntention,
+            );
+        })
+        .catch(async (error) => {
+            console.log("Sono nel catch", error);
+            failed = true;
+            await Communication.Agent.setIntentionStatus(
+                client,
+                { agentId: agentId, intention: Intentions.requestedIntention, isActive: true },
+                false,
+            );
+        });
     }
 }, 2000);
 
