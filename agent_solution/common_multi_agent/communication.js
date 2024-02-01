@@ -30,7 +30,6 @@ class Communication {
                 console.log(name, "is the coordinator");
                 reply(this.toJSON(Messages.ACK));
             } else if (msg.message === Messages.STOP_INTENTION) {
-                console.log("Impossible ", msg.args.intention, Intentions.requestedIntention);
                 if (msg.args.agentId !== this.agentId && 
                     Intentions.requestedIntention &&
                     Coordinator.equalsIntention(msg.args.intention, Intentions.requestedIntention)
@@ -139,11 +138,8 @@ class Communication {
                 Coordinator.decayAllIntentionGains();
 
                 Coordinator.computeAllDesires();
-                // Coordinator.coordinateIntentions();
 
                 let target = await Coordinator.getBestCoordinatedIntention(client, id);
-                // console.log("Communication target ", target);
-                // console.log(name, "has intention", target);
                 reply(this.toJSON(Messages.INTENTION, target));
             } else if (msg.message == Messages.SWAP_INTENTION) {
                 let target = await Coordinator.shiftAgentIntentions(client, id, msg.args);

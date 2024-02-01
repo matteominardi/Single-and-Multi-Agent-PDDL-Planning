@@ -97,42 +97,76 @@ class TileMap {
         const neighbours = [];
         if (
             tile.x > 0 &&
-            this.tiles[tile.x - 1][tile.y].type !== TileType.EMPTY && // no agents
-            Array.from(BeliefSet.getAgents()).every(
-                (agent) => agent.x !== tile.x - 1 || agent.y !== tile.y,
-            )
+            this.tiles[tile.x - 1][tile.y].type !== TileType.EMPTY
         ) {
             neighbours.push(this.tiles[tile.x - 1][tile.y]);
         }
         if (
             tile.x < this.width - 1 &&
-            this.tiles[tile.x + 1][tile.y].type !== TileType.EMPTY &&
-            Array.from(BeliefSet.getAgents()).every(
-                (agent) => agent.x !== tile.x + 1 || agent.y !== tile.y,
-            )
+            this.tiles[tile.x + 1][tile.y].type !== TileType.EMPTY
         ) {
             neighbours.push(this.tiles[tile.x + 1][tile.y]);
         }
         if (
             tile.y > 0 &&
-            this.tiles[tile.x][tile.y - 1].type !== TileType.EMPTY &&
-            Array.from(BeliefSet.getAgents()).every(
-                (agent) => agent.x !== tile.x || agent.y !== tile.y - 1,
-            )
+            this.tiles[tile.x][tile.y - 1].type !== TileType.EMPTY
         ) {
             neighbours.push(this.tiles[tile.x][tile.y - 1]);
         }
         if (
             tile.y < this.height - 1 &&
-            this.tiles[tile.x][tile.y + 1].type !== TileType.EMPTY &&
-            Array.from(BeliefSet.getAgents()).every(
-                (agent) => agent.x !== tile.x || agent.y !== tile.y + 1,
-            )
+            this.tiles[tile.x][tile.y + 1].type !== TileType.EMPTY
         ) {
             neighbours.push(this.tiles[tile.x][tile.y + 1]);
         }
         return neighbours;
     }
+
+    toPddl() {
+        let pddl = new Map();
+        for (let i = 0; i < this.width; i++) {
+            for (let j = 0; j < this.height; j++) {
+                const tile = this.tiles[i][j];
+                let currentTile = [];
+
+                currentTile.push(`(tile x${i}y${j})`);
+
+                if (
+                    tile.type === TileType.NORMAL ||
+                    tile.type === TileType.DELIVERY
+                ) {
+                    currentTile.push(`(available x${i}y${j})`);
+                } else {
+                    currentTile.push(`(not (available x${i}y${j}))`);
+                }
+
+                const neighbours = this.getNeighbours(tile);
+                neighbours.forEach((neighbour) => {
+                    if (neighbour.x > tile.x) {
+                        currentTile.push(
+                            `(right x${neighbour.x}y${neighbour.y} x${i}y${j})`,
+                        );
+                    } else if (neighbour.x < tile.x) {
+                        currentTile.push(
+                            `(left x${neighbour.x}y${neighbour.y} x${i}y${j})`,
+                        );
+                    } else if (neighbour.y > tile.y) {
+                        currentTile.push(
+                            `(up x${neighbour.x}y${neighbour.y} x${i}y${j})`,
+                        );
+                    } else if (neighbour.y < tile.y) {
+                        currentTile.push(
+                            `(down x${neighbour.x}y${neighbour.y} x${i}y${j})`,
+                        );
+                    }
+                });
+
+                pddl.set(`x${i}y${j}`, currentTile);
+            }
+        }
+        return pddl;
+    }
+
 }
 
 export { Tile, TileMap, TileType };

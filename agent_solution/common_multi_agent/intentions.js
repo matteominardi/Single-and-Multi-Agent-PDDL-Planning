@@ -1,9 +1,9 @@
 import BeliefSet from "./belief.js";
+import Communication from "./communication.js";
 import { computeActions, computeDeliveryGain, computeParcelGain } from "./helpers.js";
 import Me from "./me.js";
 import { TileType } from "./world.js";
-import Communication from "./communication.js";
-import { sleep } from "../common_multi_agent/helpers.js";
+import Coordinator from "./coordinator.js";
 
 class Intention {
     constructor(desire) {

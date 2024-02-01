@@ -152,24 +152,24 @@ class BeliefSet {
             mapPddl.set(key, infos);
         });
 
-        const parcelsPddl = this.getParcels().toPddl();
-        parcelsPddl.forEach(function (parcel, key, map) {
-            // iterate over parcel and search the one that starts with (parcel, take everything until the end-1
-            const parcelInfo = parcel.find((info) =>
-                info.startsWith("(parcel"),
-            );
-            // get everything after the first space and before the last )
-            const parcelInfoIndex = parcel.indexOf(parcelInfo);
-            let parcelInfoId = parcel[parcelInfoIndex];
-            parcelInfoId = parcelInfoId.substring(
-                parcelInfoId.indexOf(" ") + 1,
-                parcelInfoId.lastIndexOf(")"),
-            );
-            objects.push(`${parcelInfoId}`);
-            let infos = mapPddl.get(key);
-            infos = infos.concat(parcel);
-            mapPddl.set(key, infos);
-        });
+        // const parcelsPddl = this.getParcels().toPddl();
+        // parcelsPddl.forEach(function (parcel, key, map) {
+        //     // iterate over parcel and search the one that starts with (parcel, take everything until the end-1
+        //     const parcelInfo = parcel.find((info) =>
+        //         info.startsWith("(parcel"),
+        //     );
+        //     // get everything after the first space and before the last )
+        //     const parcelInfoIndex = parcel.indexOf(parcelInfo);
+        //     let parcelInfoId = parcel[parcelInfoIndex];
+        //     parcelInfoId = parcelInfoId.substring(
+        //         parcelInfoId.indexOf(" ") + 1,
+        //         parcelInfoId.lastIndexOf(")"),
+        //     );
+        //     objects.push(`${parcelInfoId}`);
+        //     let infos = mapPddl.get(key);
+        //     infos = infos.concat(parcel);
+        //     mapPddl.set(key, infos);
+        // });
 
         const mePddl = this.getMe().toPddl();
 
@@ -187,7 +187,7 @@ class BeliefSet {
         }`;
 
         const problemPddl = new PddlProblem(
-            "prova",
+            "path",
             objects.join(" "),
             init.join(" "),
             goal,

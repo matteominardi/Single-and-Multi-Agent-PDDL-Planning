@@ -1,9 +1,10 @@
-import aStar from "a-star";
+import { PddlProblem } from "@unitn-asa/pddl-client";
+import * as fs from "fs";
 import BeliefSet from "./belief.js";
 import Communication from "./communication.js";
 import Config from "./config.js";
 import { Desire } from "./desires.js";
-import { hash } from "./helpers.js";
+import { mySolver } from "./helpers.js";
 import { Parcel, Parcels } from "./parcel.js";
 import { TileMap, TileType } from "./world.js";
 
@@ -648,31 +649,71 @@ class Coordinator {
         return selectedActions;
     }
 
-    static computePath(start) {
-        const options = {
-            start: start,
-            isEnd: Coordinator.isEnd,
-            neighbor: Coordinator.getNeighbors,
-            distance: Coordinator.distanceBetween,
-            heuristic: Coordinator.heuristic,
-            hash: hash,
-        };
-        return aStar(options);
-    }
+    static async computePath(start) {
 
-    static isEnd(tile) {
-        const end = Coordinator.getMap().getTile(Coordinator.currentAgentGoal.x, Coordinator.currentAgentGoal.y);
-        return end.x === tile.x && end.y === tile.y;
+        let objects = [];
+        // get all the tiles
+        const mapPddl = Coordinator.getMap().toPddl(); // it is a map of xiyj to array of strings
+        // console.log(mapPddl);
+        // get all the agents positions that are not in agents
+        const agentsPddl = this.allPerceivedAgents.filter((agent) => !this.agents.has(agent.id)).map((agent) => `x${agent.x}y${agent.y}`);
+        agentsPddl.forEach(function (key) {
+            const infos = mapPddl.get(key);
+            // search string that starts with (available and replace it with
+            // `(not (available x${i}y${j}))`
+            const available = infos.find((info) =>
+                info.startsWith("(available"),
+            );
+            const index = infos.indexOf(available);
+            infos[index] = `(not ${available})`;
+            mapPddl.set(key, infos);
+        });
+
+        const mePddl = [];
+        mePddl.push(`(self me)`)
+        mePddl.push(`(at me x${start.x}y${start.y})`)
+
+        let init = [];
+        init = init.concat(mePddl);
+        objects.push(`me`);
+
+        mapPddl.forEach(function (infos, key, map) {
+            objects.push(`${key}`);
+            init = init.concat(infos);
+        });
+
+        const goal = `at me x${Coordinator.currentAgentGoal.x}y${
+            Coordinator.currentAgentGoal.y
+        }`;
+        
+        const problemPddl = new PddlProblem(
+            "path",
+            objects.join(" "),
+            init.join(" "),
+            goal,
+        )
+
+        const domainPddl = fs.readFileSync("./domain.pddl", "utf8");
+        let prova = await mySolver(domainPddl, problemPddl.toPddlString());
+        console.log("prova", prova);
+
+        if (prova === undefined) {
+            console.log(problemPddl.name);
+            await problemPddl.saveToFile();
+        }
+
+        let [actions, tiles] = prova;
+
+        return {
+            status: actions.length > 0 ? "success" : "failure",
+            path: actions,
+            tiles: tiles,
+        };
+
     }
 
     static getNeighbors(tile) {
         return Coordinator.getMap().getNeighbours(tile);
-    }
-
-    static heuristic(tile) {
-        return (
-            Math.abs(tile.x - Coordinator.currentAgentGoal.x) + Math.abs(tile.y - Coordinator.currentAgentGoal.y)
-        );
     }
 
     static checkTeamInterference(agentId, path) {
