@@ -60,10 +60,11 @@ class Me {
             (parcel) => parcel.reward > 1,
         );
         let carriedByMe = BeliefSet.getCarriedByMe();
-        if (
-            requestedIntention.forcedDelivery === false && 
+        if ((requestedIntention.forcedDelivery === true &&
+            carriedByMe.length > 0) ||
+            (requestedIntention.forcedDelivery === false && 
             currentTile.type === TileType.DELIVERY &&
-            carriedByMe.length > 0
+            carriedByMe.length > 0)
         ) {
             await this.do_action(client, Actions.PUT_DOWN);
             BeliefSet.emptyCarriedByMe();
@@ -73,12 +74,6 @@ class Me {
                     carriedByMe[parcel].id,
                 );
             }
-        } else if (
-            requestedIntention.forcedDelivery === true &&
-            carriedByMe.length > 0
-        ) {
-            await this.do_action(client, Actions.PUT_DOWN);
-            BeliefSet.emptyCarriedByMe();          
         } else if (currentTile.type === TileType.NORMAL) {
             for (let parcel in perceivedParcels) {
                 if (
@@ -91,11 +86,7 @@ class Me {
                     await this.do_action(client, Actions.PICKUP);
 
                     BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
-                    Intentions.queue = Intentions.queue.filter((d) =>
-                        d.parcel
-                            ? d.parcel.id !== perceivedParcels[parcel].id
-                            : true,
-                    );
+                    
                     await Communication.Agent.removeCompletedIntention(
                         client,
                         {
@@ -108,12 +99,6 @@ class Me {
                 }
             }
         }
-        Intentions.queue = Intentions.queue.filter(
-            (d) =>
-                d.tile !== currentTile &&
-                d.gain > 0 &&
-                (d.parcel ? d.parcel.reward > 0 : true),
-        );
     }
 
     async do_action(client, action) {

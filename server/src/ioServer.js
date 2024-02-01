@@ -135,7 +135,7 @@ io.on('connection', (socket) => {
 
     socket.on( 'say', (toId, msg, acknowledgementCallback) => {
         
-        console.log( me.id, me.name, 'say ', toId, msg );
+        // console.log( me.id, me.name, 'say ', toId, msg );
 
         for ( let socket of myAuthenticator.getSockets( toId )() ) {
             
@@ -151,7 +151,7 @@ io.on('connection', (socket) => {
     } )
 
     socket.on( 'ask', (toId, msg, replyCallback) => {
-        console.log( me.id, me.name, 'ask', toId, msg );
+        // console.log( me.id, me.name, 'ask', toId, msg );
 
         for ( let socket of myAuthenticator.getSockets( toId )() ) {
             
@@ -159,7 +159,7 @@ io.on('connection', (socket) => {
             socket.emit( 'msg', me.id, me.name, msg, (reply) => {
 
                 try {
-                    console.log( toId, 'replied', reply );
+                    // console.log( toId, 'replied', reply );
                     replyCallback( reply )
                 } catch (error) { console.log( me.id, 'error while trying to acknowledge reply' ) }
 
@@ -171,7 +171,7 @@ io.on('connection', (socket) => {
 
     socket.on( 'shout', (msg, acknowledgementCallback) => {
 
-        console.log( me.id, me.name, 'shout', msg );
+        // console.log( me.id, me.name, 'shout', msg );
 
         socket.broadcast.emit( 'msg', me.id, me.name, msg );
 

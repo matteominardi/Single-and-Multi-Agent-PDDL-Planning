@@ -49,7 +49,7 @@ setTimeout(async () => {
     Communication.Agent.agentId = agentId;
 
     while (true) {
-        // BeliefSet.decayParcelsReward();
+        BeliefSet.decayParcelsReward();
         // Intentions.decayGains();
         // Intentions.filterGains();
 
@@ -92,16 +92,6 @@ setTimeout(async () => {
         if (!previousTarget || !patrolling) {
             previousTarget = Intentions.requestedIntention;
         }
-
-        // await Communication.Agent.setIntentionStatus(
-        //     client,
-        //     { 
-        //         agentId: agentId, 
-        //         intention: Intentions.requestedIntention, 
-        //         isActive: true 
-        //     },
-        //     false,
-        // );
 
         await Intentions.achieve(client)
         .then(async () => {

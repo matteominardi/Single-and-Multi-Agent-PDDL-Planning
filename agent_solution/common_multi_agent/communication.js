@@ -146,7 +146,7 @@ class Communication {
                 // console.log(name, "has intention", target);
                 reply(this.toJSON(Messages.INTENTION, target));
             } else if (msg.message == Messages.SWAP_INTENTION) {
-                let target = Coordinator.shiftAgentIntentions(client, id, msg.args);
+                let target = await Coordinator.shiftAgentIntentions(client, id, msg.args);
                 reply(this.toJSON(Messages.INTENTION, target));
             }else if (msg.message == Messages.REMOVE_INTENTION) {
                 Coordinator.removeCompletedIntention(msg.args);

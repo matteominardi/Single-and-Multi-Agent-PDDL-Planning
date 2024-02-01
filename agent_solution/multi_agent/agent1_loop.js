@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import BeliefSet from "../common_multi_agent/belief.js";
 import Communication from "../common_multi_agent/communication.js";
 import Coordinator from "../common_multi_agent/coordinator.js";
-import { sleep } from "../common_multi_agent/helpers.js";
 import { Intentions } from "../common_multi_agent/intentions.js";
 import {
     initMap,
@@ -49,7 +48,7 @@ setTimeout(async () => {
     Communication.Agent.agentId = agentId;
 
     while (true) {
-        // BeliefSet.decayParcelsReward();
+        BeliefSet.decayParcelsReward();
         // Intentions.decayGains();
         // Intentions.filterGains();
 
@@ -92,16 +91,8 @@ setTimeout(async () => {
         if (!previousTarget || !patrolling) {
             previousTarget = Intentions.requestedIntention;
         }
-
-        // await Communication.Agent.setIntentionStatus(
-        //     client,
-        //     { 
-        //         agentId: agentId, 
-        //         intention: Intentions.requestedIntention, 
-        //         isActive: true 
-        //     },
-        //     false,
-        // );
+        
+        console.log("intention", Intentions.requestedIntention);
 
         await Intentions.achieve(client)
         .then(async () => {

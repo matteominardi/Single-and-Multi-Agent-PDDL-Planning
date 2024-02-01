@@ -1,12 +1,11 @@
+import aStar from "a-star";
 import BeliefSet from "./belief.js";
+import Communication from "./communication.js";
 import Config from "./config.js";
-import { TileType } from "./world.js";
-import { Parcels, Parcel } from "./parcel.js";
-import { TileMap } from "./world.js";
 import { Desire } from "./desires.js";
 import { hash } from "./helpers.js";
-import Communication from "./communication.js";
-import aStar from "a-star";
+import { Parcel, Parcels } from "./parcel.js";
+import { TileMap, TileType } from "./world.js";
 
 class Coordinator {
     static map = null;
@@ -428,7 +427,7 @@ class Coordinator {
             Coordinator.setIntentionStatus(intention, true);
             Coordinator.currentAgentGoal = intention.intention.tile;
             Coordinator.lockIntention(agentId);
-            Communication.Coord.stopAgentIntention(client, agentId, intention.intention);
+            await Communication.Coord.stopAgentIntention(client, agentId, intention.intention);
             
             return intention.intention;
         } else {
@@ -441,7 +440,7 @@ class Coordinator {
             
             Coordinator.currentAgentGoal = randomIntention.tile;
             Coordinator.lockIntention(agentId);
-            Communication.Coord.stopAgentIntention(client, agentId, randomIntention);
+            await Communication.Coord.stopAgentIntention(client, agentId, randomIntention);
             
             return randomIntention; 
         }
@@ -479,7 +478,7 @@ class Coordinator {
         }
     }
 
-    static shiftAgentIntentions(client, agentId, previousIntention) {
+    static async shiftAgentIntentions(client, agentId, previousIntention) {
         const intentionIndex = Coordinator.allIntentions.findIndex(
             (i) => i.agentId === agentId && Coordinator.equalsIntention(i.intention, previousIntention)
         );
@@ -488,7 +487,8 @@ class Coordinator {
             Coordinator.allIntentions.splice(intentionIndex, 1);
         }
         
-        return Coordinator.getBestCoordinatedIntention(client, agentId);
+        let newIntention = await Coordinator.getBestCoordinatedIntention(client, agentId);
+        return newIntention;
     }
 
     static removeCompletedIntention(intention) {
@@ -501,9 +501,9 @@ class Coordinator {
                 (p) => p.x !== intention.parcel.x || p.y !== intention.parcel.y,
             );
 
-            for (const agentId of Coordinator.agents.keys()) {
-                Coordinator.removeParcel(agentId, intention.parcel.id);
-            }
+            // for (const agentId of Coordinator.agents.keys()) {
+            //     Coordinator.removeParcel(agentId, intention.parcel.id);
+            // }
         }
     }
 
@@ -617,31 +617,31 @@ class Coordinator {
                     ),
             );
 
-            // let teamInterference = Coordinator.checkTeamInterference(agentId, path);
+            let teamInterference = Coordinator.checkTeamInterference(agentId, path);
 
             if (
                 !isInterference &&
                 // !Coordinator.checkOpponentInterference(agentId, intention.intention) &&
-                !Coordinator.checkOpponentInterference(agentId, path) // &&
-                // !teamInterference.existsIntersection
+                !Coordinator.checkOpponentInterference(agentId, path) &&
+                !teamInterference.existsIntersection
             ) {
                 selectedActions.push(intention);
             } else if (
                 !isInterference &&
-                !intention.intention.parcel // &&
-                // teamInterference.existsIntersection
+                !intention.intention.parcel &&
+                teamInterference.existsIntersection
             ) {
-                // const lastValidTile = teamInterference.lastValidTile;
-                // selectedActions.push({
-                //     agentId: agentId,
-                //     intention: new Desire(
-                //         lastValidTile,
-                //         intention.intention.gain,
-                //         null,
-                //         true,
-                //     ),
-                //     isActive: false,
-                // });
+                const lastValidTile = teamInterference.lastValidTile;
+                selectedActions.push({
+                    agentId: agentId,
+                    intention: new Desire(
+                        lastValidTile,
+                        intention.intention.gain,
+                        null,
+                        true,
+                    ),
+                    isActive: false,
+                });
             }
         }
 
@@ -692,7 +692,7 @@ class Coordinator {
                 ([agent, agentTile]) =>
                     agent !== agentId &&
                     agentTile.last_x === tile.x &&
-                    agentTile.last_x === tile.y,
+                    agentTile.last_y === tile.y,
             );
 
             if (!agentOnTile) {
@@ -726,6 +726,8 @@ class Coordinator {
 
     static checkOpponentInterference(agentId, path) {
         path = path.path;
+
+        console.log("checkOpponentInterference", agentId, path);
 
         const visitedTiles = new Set();
         let existsIntersection = false;

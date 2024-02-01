@@ -94,11 +94,12 @@ class Intentions {
                     } catch (err) {
                         console.log("Failed movement", err);
                         failed = true;
-                        this.success = false;
-                        this.shouldStop = true;
-                        throw "error";
+                        // this.success = false;
+                        // this.shouldStop = true;
                     }
                 }
+
+                await BeliefSet.getMe().performAction(client, this.requestedIntention);
 
                 let newBest = await Communication.Agent.sendBelief(
                     client,
@@ -109,6 +110,14 @@ class Intentions {
                         carriedByMe: BeliefSet.getCarriedByMe(),
                     }
                 );
+
+                if (failed && Coordinator.equalsIntention(newBest, this.requestedIntention)) {
+                    console.log(agentId, "swapping", Intentions.requestedIntention, newBest);
+        
+                    Intentions.requestedIntention = await Communication.Agent.swapIntention(client, newBest);
+        
+                    failed = false;
+                }
 
                 console.log(BeliefSet.getMe(), newBest)
 
