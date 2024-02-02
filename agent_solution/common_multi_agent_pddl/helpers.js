@@ -1,64 +1,44 @@
 import aStar from "a-star";
 import BeliefSet from "./belief.js";
 import Me, { Actions } from "./me.js";
+import { PddlProblem } from "@unitn-asa/pddl-client";
+import Communication from "./communication.js";
+import Coordinator from "./coordinator.js";
+import * as fs from "fs";
 
 async function mySolver(
     pddlDomain,
     pddlProblem,
     remote_url = "http://localhost:5001",
-    planner = "/package/dual-bfws-ffparser/solve",
+    planner = "optic",
 ) {
     // console.log("problem", pddlProblem);
     try {
-        var res = await fetch( remote_url + planner, {
+        console.log("sending request to planner");
+        let ask = await fetch(`${remote_url}/package/${planner}/solve`, {
             method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json",
+                persistent: "true",
             },
-            body: JSON.stringify( {domain: pddlDomain, problem: pddlProblem} )
-        })
-        
-        if ( res.status != 200 ) {
-            throw new Error( `Error at ${remote_url}${planner} ${await res.text()}` );
-        }
-    
-        res = await res.json();
-    
-        if ( ! res.result ) {
-            throw new Error( `No value "result" from ${remote_url+planner} ` + res );
-        }
-    
-        // console.log(res);
-    
-        // Getting result
-        res = await fetch(remote_url+res.result, {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify( {adaptor: "planning_editor_adaptor"} )
+            body: JSON.stringify({ domain: pddlDomain, problem: pddlProblem }),
         });
-    
-        if ( res.status != 200 ) {
-            throw new Error( `Error at ${remote_url+res.result} ` + await res.text() );
+        ask = await ask.json();
+
+        let plan = await fetch(`${remote_url}${ask.result}`);
+        plan = await plan.json();
+        let fail = 0;
+        while (plan.status === "PENDING" && fail < 5) {
+            await sleep(1000);
+            fail++;
+            console.log("waiting for plan");
+            plan = await fetch(`${remote_url}${ask.result}`);
+            plan = await plan.json();
         }
-        
-        res = await res.json();
-    
-        // console.log(res);
-        // console.log(res.plans[0].result);
-        // console.log(res.plans[0].result.plan);
-    
-        if ( res.status != 'ok' || res.plans[0].status != 'ok' ) {
-            throw new Error( `Error at ${remote_url+planner} ` + res );
+        if (fail === 5) {
+            console.log("failed to get plan");
+            return [[], []];
         }
-    
-        if ( res.plans[0].result.output.split('\n')[0] != ' --- OK.' ) {
-            console.error( 'Plan not found', res.plans[0].result.output );
-            return;
-        }
-    
-        console.log( 'Plan found:' )
         plan = await plan.result.output.plan;
         // keep everything after ";;;; Solution Found"
         if (plan.includes(";;;; Solution Found")) {
@@ -89,6 +69,79 @@ async function mySolver(
     } catch (error) {
         console.log(error);
     }
+}
+
+async function computePath(client, start) {
+    let objects = [];
+    // get all the tiles
+    const mapPddl = Coordinator.getMap().toPddl(); // it is a map of xiyj to array of strings
+    // console.log(mapPddl);
+    // get all the agents positions that are not in agents
+    const agentsPddl = await Communication.Agent.getAgents(client).then(
+        // filter agents with name god and me
+        (agents) =>
+            agents
+                .filter(
+                    (agent) =>
+                        agent.name !== "god" &&
+                        agent.name !== BeliefSet.getMe().name,
+                )
+                .map((agent) => `x${parseInt(agent.x)}y${parseInt(agent.y)}`),
+    );
+    agentsPddl.forEach(function (key) {
+        const infos = mapPddl.get(key);
+        // search string that starts with (available and replace it with
+        // `(not (available x${i}y${j}))`
+        const available = infos.find((info) => info.startsWith("(available"));
+        const index = infos.indexOf(available);
+        infos[index] = `(not ${available})`;
+        mapPddl.set(key, infos);
+    });
+
+    const mePddl = [];
+    mePddl.push(`(self me)`);
+    mePddl.push(`(at me x${start.x}y${start.y})`);
+
+    let init = [];
+    init = init.concat(mePddl);
+    objects.push(`me`);
+
+    mapPddl.forEach(function (infos, key, map) {
+        objects.push(`${key}`);
+        init = init.concat(infos);
+    });
+
+    const goal = `at me x${Me.requested_x}y${Me.requested_y}`;
+
+    const problemPddl = new PddlProblem(
+        "path",
+        objects.join(" "),
+        init.join(" "),
+        goal,
+    );
+
+    const domainPddl = fs.readFileSync("./domain.pddl", "utf8");
+    let prova = await mySolver(domainPddl, problemPddl.toPddlString());
+    console.log("prova", prova);
+
+    // if (prova === [[], []]) {
+    //     console.log("problem", problemPddl.name);
+    //     await problemPddl.saveToFile();
+    // }
+
+    // if (prova === undefined) {
+    //     console.log(problemPddl.name);
+    //     await problemPddl.saveToFile();
+    // }
+
+    let [actions, tiles] = prova;
+
+    return {
+        status:
+            actions !== undefined && actions.length > 0 ? "success" : "failure",
+        path: actions,
+        tiles: tiles,
+    };
 }
 
 function getPath(start) {
@@ -147,9 +200,10 @@ function computeParcelGain(parcel) {
     let score = 0;
 
     const gonnaCarry = BeliefSet.getCarriedByMe().length + 1; // me + parcel
-    const factor = 0.01 +
+    const factor =
+        0.01 +
         BeliefSet.getConfig().MOVEMENT_DURATION /
-        BeliefSet.getConfig().PARCEL_DECADING_INTERVAL;
+            BeliefSet.getConfig().PARCEL_DECADING_INTERVAL;
     const parcelDistance = distanceBetween(
         BeliefSet.getMe().getMyPosition(),
         BeliefSet.getMap().getTile(parcel.x, parcel.y),
@@ -170,9 +224,10 @@ function computeDeliveryGain(deliverySpot) {
     let score = 0;
 
     const gonnaCarry = BeliefSet.getCarriedByMe().length;
-    const factor = 0.01 +
+    const factor =
+        0.01 +
         BeliefSet.getConfig().MOVEMENT_DURATION /
-        BeliefSet.getConfig().PARCEL_DECADING_INTERVAL;
+            BeliefSet.getConfig().PARCEL_DECADING_INTERVAL;
     const distance = distanceBetween(
         BeliefSet.getMe().getMyPosition(),
         deliverySpot,
@@ -185,5 +240,15 @@ function computeDeliveryGain(deliverySpot) {
 
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
-export { computeActions, computeDeliveryGain, computeParcelGain, distanceBetween, getPath, hash, isEnd, mySolver, sleep };
-
+export {
+    computeActions,
+    computeDeliveryGain,
+    computeParcelGain,
+    distanceBetween,
+    getPath,
+    hash,
+    isEnd,
+    mySolver,
+    sleep,
+    computePath,
+};

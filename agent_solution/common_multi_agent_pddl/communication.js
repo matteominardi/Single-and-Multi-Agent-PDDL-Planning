@@ -12,6 +12,7 @@ class Messages {
     static SET_INTENTION_STATUS = "set_intention_status";
     static SET_CARRYING = "set_carrying";
     static EMPTY_CARRYING = "empty_carrying";
+    static GET_AGENTS = "get_agents";
     static ACK = "ack";
 }
 
@@ -30,16 +31,33 @@ class Communication {
                 console.log(name, "is the coordinator");
                 reply(this.toJSON(Messages.ACK));
             } else if (msg.message === Messages.STOP_INTENTION) {
-                console.log("Impossible ", msg.args.intention, Intentions.requestedIntention);
-                if (msg.args.agentId !== this.agentId && 
+                console.log(
+                    "Impossible ",
+                    msg.args.intention,
+                    Intentions.requestedIntention,
+                );
+                if (
+                    msg.args.agentId !== this.agentId &&
                     Intentions.requestedIntention &&
-                    Coordinator.equalsIntention(msg.args.intention, Intentions.requestedIntention)
+                    Coordinator.equalsIntention(
+                        msg.args.intention,
+                        Intentions.requestedIntention,
+                    )
                 ) {
                     Intentions.shouldStop = true;
                 } else {
                     Intentions.shouldStop = false;
                 }
             }
+        }
+
+        static async getAgents(client) {
+            let res = await client.ask(
+                this.coordinator,
+                this.toJSON(Messages.GET_AGENTS),
+            );
+            res = JSON.parse(await res);
+            return await res.args;
         }
 
         static async setCarrying(client, parcel) {
@@ -131,36 +149,46 @@ class Communication {
                 let carriedBy = msg.args.carriedBy;
 
                 Coordinator.updateAgent(id, msg.args.info);
-                
+
                 Coordinator.addPerceivedParcels(perceivedParcels);
                 Coordinator.addPerceivedAgents(perceivedAgents);
-                
+
                 Coordinator.ignoreOpponentsParcels();
                 Coordinator.decayAllIntentionGains();
 
                 Coordinator.computeAllDesires();
                 // Coordinator.coordinateIntentions();
 
-                let target = await Coordinator.getBestCoordinatedIntention(client, id);
+                let target = await Coordinator.getBestCoordinatedIntention(
+                    client,
+                    id,
+                );
                 // console.log("Communication target ", target);
                 // console.log(name, "has intention", target);
                 reply(this.toJSON(Messages.INTENTION, target));
-            } else if (msg.message == Messages.SWAP_INTENTION) {
-                let target = await Coordinator.shiftAgentIntentions(client, id, msg.args);
+            } else if (msg.message === Messages.SWAP_INTENTION) {
+                let target = await Coordinator.shiftAgentIntentions(
+                    client,
+                    id,
+                    msg.args,
+                );
                 reply(this.toJSON(Messages.INTENTION, target));
-            }else if (msg.message == Messages.REMOVE_INTENTION) {
+            } else if (msg.message === Messages.REMOVE_INTENTION) {
                 Coordinator.removeCompletedIntention(msg.args);
                 reply(this.toJSON(Messages.ACK));
-            } else if (msg.message == Messages.SET_INTENTION_STATUS) {
+            } else if (msg.message === Messages.SET_INTENTION_STATUS) {
                 Coordinator.setIntentionStatus(
                     msg.args.intention,
                     msg.args.status,
                 );
                 reply(this.toJSON(Messages.ACK));
-            } else if (msg.message == Messages.EMPTY_CARRYING) {
+            } else if (msg.message === Messages.EMPTY_CARRYING) {
                 Coordinator.removeParcel(id, msg.args);
                 Coordinator.removeDeliveryIntentions(id);
                 reply(this.toJSON(Messages.ACK));
+            } else if (msg.message === Messages.GET_AGENTS) {
+                let agents = Coordinator.getAllPerceivedAgents();
+                reply(this.toJSON(Messages.ACK, agents));
             }
         }
 
@@ -185,7 +213,10 @@ class Communication {
 
         static async stopAgentIntention(client, id, intention) {
             await client.shout(
-                this.toJSON(Messages.STOP_INTENTION, {agentId: id, intention: intention}),
+                this.toJSON(Messages.STOP_INTENTION, {
+                    agentId: id,
+                    intention: intention,
+                }),
             );
         }
     };

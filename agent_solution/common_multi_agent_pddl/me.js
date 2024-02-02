@@ -1,5 +1,5 @@
 import BeliefSet from "./belief.js";
-import { getPath } from "./helpers.js";
+import { computePath, getPath } from "./helpers.js";
 import { Intentions } from "./intentions.js";
 import { TileType } from "./world.js";
 import Communication from "./communication.js";
@@ -60,11 +60,12 @@ class Me {
             (parcel) => parcel.reward > 1,
         );
         let carriedByMe = BeliefSet.getCarriedByMe();
-        if ((requestedIntention.forcedDelivery === true &&
-            carriedByMe.length > 0) ||
-            (requestedIntention.forcedDelivery === false && 
-            currentTile.type === TileType.DELIVERY &&
-            carriedByMe.length > 0)
+        if (
+            (requestedIntention.forcedDelivery === true &&
+                carriedByMe.length > 0) ||
+            (requestedIntention.forcedDelivery === false &&
+                currentTile.type === TileType.DELIVERY &&
+                carriedByMe.length > 0)
         ) {
             await this.do_action(client, Actions.PUT_DOWN);
             BeliefSet.emptyCarriedByMe();
@@ -77,7 +78,9 @@ class Me {
         } else if (currentTile.type === TileType.NORMAL) {
             for (let parcel in perceivedParcels) {
                 if (
-                    BeliefSet.shouldConsiderParcel(perceivedParcels[parcel].id) &&
+                    BeliefSet.shouldConsiderParcel(
+                        perceivedParcels[parcel].id,
+                    ) &&
                     perceivedParcels[parcel].carriedBy === null &&
                     perceivedParcels[parcel].x === currentTile.x &&
                     perceivedParcels[parcel].y === currentTile.y
@@ -86,15 +89,12 @@ class Me {
                     await this.do_action(client, Actions.PICKUP);
 
                     BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
-                    
-                    await Communication.Agent.removeCompletedIntention(
-                        client,
-                        {
-                            tile: currentTile,
-                            gain: 1,
-                            parcel: perceivedParcels[parcel]
-                        },
-                    );
+
+                    await Communication.Agent.removeCompletedIntention(client, {
+                        tile: currentTile,
+                        gain: 1,
+                        parcel: perceivedParcels[parcel],
+                    });
                     break;
                 }
             }
@@ -121,11 +121,11 @@ class Me {
         }
     }
 
-    static pathTo(tile) {
+    static async pathTo(client, tile) {
         let current = BeliefSet.getMe().getMyPosition();
         Me.requested_x = tile.x;
         Me.requested_y = tile.y;
-        return getPath(current);
+        return await computePath(client, current);
     }
 }
 
