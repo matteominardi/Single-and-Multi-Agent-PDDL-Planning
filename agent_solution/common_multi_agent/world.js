@@ -12,10 +12,12 @@ class Tile {
     y;
     type;
 
-    constructor(x, y, delivery, parcelSpawner) {
+    constructor(x, y, delivery, parcelSpawner, obstacle = false) {
         this.x = x;
         this.y = y;
-        this.type = delivery
+        this.type = obstacle ?
+            TileType.OBSTACLE 
+            : delivery
             ? TileType.DELIVERY
             : parcelSpawner
               ? TileType.NORMAL
@@ -50,7 +52,7 @@ class TileMap {
         for (let i = 0; i < width; i++) {
             for (let j = 0; j < height; j++) {
                 if (this.tiles[i][j] === undefined) {
-                    this.tiles[i][j] = new Tile(i, j, false, false);
+                    this.tiles[i][j] = new Tile(i, j, false, false, true);
                 }
             }
         }
@@ -97,7 +99,7 @@ class TileMap {
         const neighbours = [];
         if (
             tile.x > 0 &&
-            this.tiles[tile.x - 1][tile.y].type !== TileType.EMPTY && // no agents
+            this.tiles[tile.x - 1][tile.y].type !== TileType.OBSTACLE && // no agents
             Array.from(BeliefSet.getAgents()).every(
                 (agent) => agent.x !== tile.x - 1 || agent.y !== tile.y,
             )
@@ -106,7 +108,7 @@ class TileMap {
         }
         if (
             tile.x < this.width - 1 &&
-            this.tiles[tile.x + 1][tile.y].type !== TileType.EMPTY &&
+            this.tiles[tile.x + 1][tile.y].type !== TileType.OBSTACLE &&
             Array.from(BeliefSet.getAgents()).every(
                 (agent) => agent.x !== tile.x + 1 || agent.y !== tile.y,
             )
@@ -115,7 +117,7 @@ class TileMap {
         }
         if (
             tile.y > 0 &&
-            this.tiles[tile.x][tile.y - 1].type !== TileType.EMPTY &&
+            this.tiles[tile.x][tile.y - 1].type !== TileType.OBSTACLE &&
             Array.from(BeliefSet.getAgents()).every(
                 (agent) => agent.x !== tile.x || agent.y !== tile.y - 1,
             )
@@ -124,7 +126,7 @@ class TileMap {
         }
         if (
             tile.y < this.height - 1 &&
-            this.tiles[tile.x][tile.y + 1].type !== TileType.EMPTY &&
+            this.tiles[tile.x][tile.y + 1].type !== TileType.OBSTACLE &&
             Array.from(BeliefSet.getAgents()).every(
                 (agent) => agent.x !== tile.x || agent.y !== tile.y + 1,
             )

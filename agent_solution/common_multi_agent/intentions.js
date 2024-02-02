@@ -112,7 +112,7 @@ class Intentions {
                 );
 
                 if (failed && Coordinator.equalsIntention(newBest, this.requestedIntention)) {
-                    console.log(agentId, "swapping", Intentions.requestedIntention, newBest);
+                    console.log("swapping", Intentions.requestedIntention, newBest);
         
                     Intentions.requestedIntention = await Communication.Agent.swapIntention(client, newBest);
         

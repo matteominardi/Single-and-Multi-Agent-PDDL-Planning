@@ -6,8 +6,14 @@
   "main": "index.js",
   "scripts": {
     "server": "node server/index.js level_1",
-    "client": "node agent_solution/single_agent/index.js",
-    "pddl": "node agent_solution/single_agent_pddl/index.js"
+    "client_single": "node agent_solution/single_agent/index.js",
+    "client_single_pddl": "node agent_solution/single_agent_pddl/index.js",
+    "client_1_multi": "node agent_solution/multi_agent/agent1_loop.js",
+    "client_2_multi": "node agent_solution/multi_agent/agent2_loop.js",
+    "coordinator": "node agent_solution/multi_agent/coordinator_loop.js",
+    "client_1_multi_pddl": "node agent_solution/multi_agent_pddl/agent1_loop.js",
+    "client_2_multi_pddl": "node agent_solution/multi_agent_pddl/agent2_loop.js",
+    "coordinator_pddl": "node agent_solution/multi_agent/coordinator_loop.js"
   },
   "repository": {
     "type": "git",

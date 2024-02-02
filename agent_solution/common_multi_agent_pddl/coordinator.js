@@ -482,7 +482,7 @@ class Coordinator {
 
     static getRandomTile() {
         let tile = null;
-        while (tile === null || tile.type === TileType.EMPTY) {
+        while (tile === null || tile.type === TileType.OBSTACLE) {
             let x = Math.floor(Math.random() * Coordinator.getMap().width);
             let y = Math.floor(Math.random() * Coordinator.getMap().height);
             tile = Coordinator.getMap().tiles[x][y];

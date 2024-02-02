@@ -61,7 +61,10 @@ class Me {
         if (currentTile.type === TileType.DELIVERY && BeliefSet.getCarriedByMe().length > 0) {
             await this.do_action(client, Actions.PUT_DOWN);
             BeliefSet.emptyCarriedByMe();
-        } else if (currentTile.type === TileType.NORMAL) {
+        } else if (
+            currentTile.type !== TileType.OBSTACLE && 
+            currentTile.type !== TileType.DELIVERY
+        ) {
             for (let parcel in perceivedParcels) {
                 if (BeliefSet.shouldConsiderParcel(perceivedParcels[parcel].id) &&
                     perceivedParcels[parcel].carriedBy === null && 

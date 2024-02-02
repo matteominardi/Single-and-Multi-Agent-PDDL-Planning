@@ -75,7 +75,10 @@ class Me {
                     carriedByMe[parcel].id,
                 );
             }
-        } else if (currentTile.type === TileType.NORMAL) {
+        } else if (
+            currentTile.type !== TileType.OBSTACLE && 
+            currentTile.type !== TileType.DELIVERY
+        ) {
             for (let parcel in perceivedParcels) {
                 if (
                     BeliefSet.shouldConsiderParcel(

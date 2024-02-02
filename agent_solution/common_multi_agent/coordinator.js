@@ -15,6 +15,7 @@ class Coordinator {
     static allPerceivedParcels = []; // used to store all the perceived parcels by all agents
     static allPerceivedAgents = []; // used to store all the perceived agents by all agents
     static allIntentions = []; // used to store all the intentions of all agents
+    static isUpdatingBeliefs = false;
 
     static getConfig() {
         return Config;
@@ -442,7 +443,7 @@ class Coordinator {
 
     static getRandomTile() {
         let tile = null;
-        while (tile === null || tile.type === TileType.EMPTY) {
+        while (tile === null || tile.type === TileType.OBSTACLE) {
             let x = Math.floor(Math.random() * Coordinator.getMap().width);
             let y = Math.floor(Math.random() * Coordinator.getMap().height);
             tile = Coordinator.getMap().tiles[x][y];
