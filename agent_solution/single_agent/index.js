@@ -47,8 +47,13 @@ setTimeout(async () => {
         console.log("queue", Intentions.queue.length, Intentions.queue);
         let target = Intentions.getBestIntention();
         console.log("new target", target.tile.x, target.tile.y, target.gain);
+        console.log(BeliefSet.getMe().getMyPosition());
 
-        if (failed && target.equals(previousTarget)) {
+        if (
+            failed &&
+            target.tile.x === previousTarget.tile.x &&
+            target.tile.y === previousTarget.tile.y
+        ) {
             console.log("swapping");
             Intentions.queue.shift();
             target = Intentions.getBestIntention();
@@ -95,6 +100,12 @@ setTimeout(async () => {
             })
             .catch((error) => {
                 console.log("Failed intention", error);
+                if (target.parcel) {
+                    BeliefSet.ignoredParcels.add(target.parcel);
+                }
+                // setTimeout(() => {
+                //     BeliefSet.ignoredParcels.delete(target.tile);
+                // }, 10000);
                 failed = true;
             });
 

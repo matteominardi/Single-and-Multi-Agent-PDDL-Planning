@@ -54,35 +54,62 @@ class Me {
 
     async performAction(client) {
         let currentTile = this.getMyPosition();
-        console.log("currentTile", currentTile.x, currentTile.y, currentTile.type)
-        console.log("my reward ", BeliefSet.getMyReward(), "getCarriedByMe", BeliefSet.getCarriedByMe().length)
+        console.log(
+            "currentTile",
+            currentTile.x,
+            currentTile.y,
+            currentTile.type,
+        );
+        console.log(
+            "my reward ",
+            BeliefSet.getMyReward(),
+            "getCarriedByMe",
+            BeliefSet.getCarriedByMe().length,
+        );
         let perceivedParcels = Array.from(BeliefSet.getParcels());
-        console.log("perceivedParcels", perceivedParcels.length, perceivedParcels)
-        if (currentTile.type === TileType.DELIVERY && BeliefSet.getCarriedByMe().length > 0) {
+        console.log(
+            "perceivedParcels",
+            perceivedParcels.length,
+            perceivedParcels,
+        );
+        console.log(BeliefSet.ignoredParcels);
+        if (
+            currentTile.type === TileType.DELIVERY &&
+            BeliefSet.getCarriedByMe().length > 0
+        ) {
             await this.do_action(client, Actions.PUT_DOWN);
             BeliefSet.emptyCarriedByMe();
         } else if (
-            currentTile.type !== TileType.OBSTACLE && 
+            currentTile.type !== TileType.OBSTACLE &&
             currentTile.type !== TileType.DELIVERY
         ) {
             for (let parcel in perceivedParcels) {
-                if (BeliefSet.shouldConsiderParcel(perceivedParcels[parcel].id) &&
-                    perceivedParcels[parcel].carriedBy === null && 
-                    perceivedParcels[parcel].x === currentTile.x && 
-                    perceivedParcels[parcel].y === currentTile.y) { 
-                    console.log("Trying to pick up", perceivedParcels[parcel])
+                if (
+                    BeliefSet.shouldConsiderParcel(
+                        perceivedParcels[parcel].id,
+                    ) &&
+                    perceivedParcels[parcel].carriedBy === null &&
+                    perceivedParcels[parcel].x === currentTile.x &&
+                    perceivedParcels[parcel].y === currentTile.y
+                ) {
+                    console.log("Trying to pick up", perceivedParcels[parcel]);
                     await this.do_action(client, Actions.PICKUP);
-                    
+
                     BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
-                    Intentions.queue = Intentions.queue.filter(
-                        (d) => (d.parcel ? d.parcel.id !== perceivedParcels[parcel].id : true),
+                    Intentions.queue = Intentions.queue.filter((d) =>
+                        d.parcel
+                            ? d.parcel.id !== perceivedParcels[parcel].id
+                            : true,
                     );
                     break;
                 }
             }
         }
         Intentions.queue = Intentions.queue.filter(
-            (d) => d.tile !== currentTile && d.gain > 0 && (d.parcel ? d.parcel.reward > 0 : true),
+            (d) =>
+                d.tile !== currentTile &&
+                d.gain > 0 &&
+                (d.parcel ? d.parcel.reward > 0 : true),
         );
     }
 
@@ -93,6 +120,7 @@ class Me {
             action === Actions.LEFT ||
             action === Actions.RIGHT
         ) {
+            console.log("Moving", action);
             await client.move(action);
             if (!(await this.hasMoved())) {
                 throw "Move failed";

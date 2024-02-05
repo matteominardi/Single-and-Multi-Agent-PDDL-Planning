@@ -60,11 +60,12 @@ class Me {
             (parcel) => parcel.reward > 1,
         );
         let carriedByMe = BeliefSet.getCarriedByMe();
-        if ((requestedIntention.forcedDelivery === true &&
-            carriedByMe.length > 0) ||
-            (requestedIntention.forcedDelivery === false && 
-            currentTile.type === TileType.DELIVERY &&
-            carriedByMe.length > 0)
+        if (
+            (requestedIntention.forcedDelivery === true &&
+                carriedByMe.length > 0) ||
+            (requestedIntention.forcedDelivery === false &&
+                currentTile.type === TileType.DELIVERY &&
+                carriedByMe.length > 0)
         ) {
             await this.do_action(client, Actions.PUT_DOWN);
             BeliefSet.emptyCarriedByMe();
@@ -75,12 +76,14 @@ class Me {
                 );
             }
         } else if (
-            currentTile.type !== TileType.OBSTACLE && 
+            currentTile.type !== TileType.OBSTACLE &&
             currentTile.type !== TileType.DELIVERY
         ) {
             for (let parcel in perceivedParcels) {
                 if (
-                    BeliefSet.shouldConsiderParcel(perceivedParcels[parcel].id) &&
+                    BeliefSet.shouldConsiderParcel(
+                        perceivedParcels[parcel].id,
+                    ) &&
                     perceivedParcels[parcel].carriedBy === null &&
                     perceivedParcels[parcel].x === currentTile.x &&
                     perceivedParcels[parcel].y === currentTile.y
@@ -89,15 +92,12 @@ class Me {
                     await this.do_action(client, Actions.PICKUP);
 
                     BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
-                    
-                    await Communication.Agent.removeCompletedIntention(
-                        client,
-                        {
-                            tile: currentTile,
-                            gain: 1,
-                            parcel: perceivedParcels[parcel]
-                        },
-                    );
+
+                    await Communication.Agent.removeCompletedIntention(client, {
+                        tile: currentTile,
+                        gain: 1,
+                        parcel: perceivedParcels[parcel],
+                    });
                     break;
                 }
             }

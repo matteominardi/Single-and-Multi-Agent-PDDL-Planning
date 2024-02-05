@@ -68,7 +68,26 @@ class Desires {
         if (parcelsViewed === 0 && BeliefSet.getCarriedByMe().length === 0) {
             options.push(new Desire(BeliefSet.getMap().getRandomTile(), 1));
         }
-        return options.sort((a, b) => b.gain - a.gain); // best first
+
+        if (BeliefSet.getCarriedByMe().length > 4) {
+            let closestDeliverySpot = BeliefSet.getClosestDeliverySpot(
+                BeliefSet.getMe().getMyPosition(),
+            );
+            console.log("closestDeliverySpot", closestDeliverySpot);
+            console.log(new Desire(closestDeliverySpot, Infinity));
+            options.push(new Desire(closestDeliverySpot, Infinity));
+        }
+
+        return options.sort((a, b) => {
+            if (a.gain !== b.gain) {
+                return b.gain - a.gain;
+            } else {
+                return (
+                    distanceBetween(BeliefSet.getMe().getMyPosition(), a.tile) -
+                    distanceBetween(BeliefSet.getMe().getMyPosition(), b.tile)
+                );
+            }
+        }); // best first
     }
 }
 

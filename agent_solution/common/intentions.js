@@ -1,7 +1,13 @@
 import BeliefSet from "./belief.js";
-import { computeActions, computeDeliveryGain, computeParcelGain } from "./helpers.js";
+import {
+    computeActions,
+    computeDeliveryGain,
+    computeParcelGain,
+    distanceBetween,
+} from "./helpers.js";
 import Me from "./me.js";
 import { TileType } from "./world.js";
+import Desires from "./desires.js";
 
 class Intention {
     constructor(desire) {
@@ -23,9 +29,11 @@ class Intentions {
     static add(desires) {
         for (let desire of desires) {
             // check if the same tile is already in the queue, and update the gain
-            const existingDesireIndex = this.queue.findIndex(d => d.tile.equals(desire.tile));
-            
-            if (existingDesireIndex !== -1) {
+            const existingDesireIndex = this.queue.findIndex((d) =>
+                d.tile.equals(desire.tile),
+            );
+
+            if (existingDesireIndex !== -1 && desire.gain !== Infinity) {
                 this.queue[existingDesireIndex].gain = desire.gain;
             } else {
                 this.queue.push(desire);
@@ -35,7 +43,14 @@ class Intentions {
 
     static sort() {
         this.queue.sort((a, b) => {
-            return b.gain - a.gain;
+            if (a.gain !== b.gain) {
+                return b.gain - a.gain;
+            } else {
+                return (
+                    distanceBetween(BeliefSet.getMe().getMyPosition(), a.tile) -
+                    distanceBetween(BeliefSet.getMe().getMyPosition(), b.tile)
+                );
+            }
         });
     }
 
@@ -43,12 +58,15 @@ class Intentions {
         this.queue = [];
     }
 
-    static decayGains() {        
+    static decayGains() {
         for (let intention of this.queue) {
             if (intention.parcel) {
                 intention.gain = computeParcelGain(intention.parcel);
             } else {
-                if (intention.tile.type === TileType.DELIVERY) {
+                if (
+                    intention.tile.type === TileType.DELIVERY &&
+                    intention.gain !== Infinity
+                ) {
                     intention.gain = computeDeliveryGain(intention.tile);
                 }
             }
@@ -56,14 +74,23 @@ class Intentions {
     }
 
     static filterGains() {
-        this.queue = this.queue.filter(
-            (d) => d.gain > 0,
-        );
+        this.queue = this.queue.filter((d) => d.gain > 0);
     }
 
     static getBestIntention() {
         console.log("queue", this.queue);
-        return new Intention(this.queue[0]);
+        if (this.queue.length === 0) {
+            let options = Desires.computeDesires();
+            Intentions.add(options);
+            Intentions.sort();
+            if (this.queue.length > 1) {
+                return new Intention(this.queue[1]);
+            } else {
+                return new Intention(this.queue[0]);
+            }
+        } else {
+            return new Intention(this.queue[0]);
+        }
     }
 
     static async achieve(client) {
@@ -77,23 +104,27 @@ class Intentions {
             this.shouldStop = false;
             return;
         }
-        
 
         const path = Me.pathTo(this.requestedIntention.tile);
         if (path.status === "success") {
             const perceivedAgents = Array.from(BeliefSet.getAgents());
 
-            const existsIntersection = path.path.some((tile) =>
-                perceivedAgents.some((agent) => agent.x === tile.x && agent.y === tile.y),
-            );
+            // const existsIntersection = path.path.some((tile) =>
+            //     perceivedAgents.some(
+            //         (agent) => agent.x === tile.x && agent.y === tile.y,
+            //     ),
+            // );
+            //
+            // if (existsIntersection) {
+            //     console.log(
+            //         BeliefSet.getMe().id,
+            //         "path blocked by another agent",
+            //     );
+            //     this.success = false;
+            //     throw "path blocekd";
+            //     // return;
+            // }
 
-            if (existsIntersection) {
-                console.log(BeliefSet.getMe().id, "path blocked by another agent");
-                this.success = false;
-                // throw "path blocekd";
-                return;
-            }
-            
             const actions = computeActions(path.path);
             let failed = false;
 
@@ -110,14 +141,18 @@ class Intentions {
             }
 
             if (this.shouldStop) {
-                console.log(BeliefSet.getMe().id, "stopped before reaching target", this.requestedIntention.tile);
+                console.log(
+                    BeliefSet.getMe().id,
+                    "stopped before reaching target",
+                    this.requestedIntention.tile,
+                );
                 this.shouldStop = false;
                 this.success = false;
                 return;
             }
-            
+
             if (!failed) {
-                console.log(BeliefSet.getMe().id, "target tile reached!");      
+                console.log(BeliefSet.getMe().id, "target tile reached!");
                 await BeliefSet.getMe().performAction(client);
                 this.success = true;
             }
@@ -132,4 +167,3 @@ class Intentions {
 }
 
 export { Intention, Intentions };
-
