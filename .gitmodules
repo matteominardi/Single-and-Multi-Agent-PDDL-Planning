@@ -1,0 +1,3 @@
+[submodule "planning-as-a-service"]
+	path = planning-as-a-service
+	url = git@github.com:AI-Planning/planning-as-a-service.git
