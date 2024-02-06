@@ -1,6 +1,11 @@
 import BeliefSet from "./belief.js";
 import Communication from "./communication.js";
-import { computeActions, computeDeliveryGain, computeParcelGain, sleep } from "./helpers.js";
+import {
+    computeActions,
+    computeDeliveryGain,
+    computeParcelGain,
+    sleep,
+} from "./helpers.js";
 import Me from "./me.js";
 import { TileType } from "./world.js";
 import Coordinator from "./coordinator.js";
@@ -25,8 +30,10 @@ class Intentions {
     static add(desires) {
         for (let desire of desires) {
             // check if the same tile is already in the queue, and update the gain
-            const existingDesireIndex = this.queue.findIndex(d => d.tile.equals(desire.tile));
-            
+            const existingDesireIndex = this.queue.findIndex((d) =>
+                d.tile.equals(desire.tile),
+            );
+
             if (existingDesireIndex !== -1) {
                 this.queue[existingDesireIndex].gain = desire.gain;
             } else {
@@ -45,7 +52,7 @@ class Intentions {
         this.queue = [];
     }
 
-    static decayGains() {        
+    static decayGains() {
         for (let intention of this.queue) {
             if (intention.parcel) {
                 intention.gain = computeParcelGain(intention.parcel);
@@ -58,9 +65,7 @@ class Intentions {
     }
 
     static filterGains() {
-        this.queue = this.queue.filter(
-            (d) => d.gain > 0,
-        );
+        this.queue = this.queue.filter((d) => d.gain > 0);
     }
 
     static getBestIntention() {
@@ -74,21 +79,25 @@ class Intentions {
         //     this.success = false;
         //     throw "error";
         // }
-        
+
         // TODO: understand why this.requestedIntention is null sometimes
         let path = Me.pathTo(this.requestedIntention.tile);
-        
+
         if (path.status === "success") {
             let actions = computeActions(path.path);
             let failed = false;
 
             this.shouldStop = false;
 
+            let previousIntention = null;
+
             while (actions.length > 0) {
-                console.log("---------------------------------------------------");
+                console.log(
+                    "---------------------------------------------------",
+                );
                 if (this.shouldStop === false) {
                     const action = actions.shift();
-                        
+
                     try {
                         await BeliefSet.getMe().do_action(client, action);
                     } catch (err) {
@@ -99,53 +108,72 @@ class Intentions {
                     }
                 }
 
-                await BeliefSet.getMe().performAction(client, this.requestedIntention);
-
-                await sleep(100);
-
-                let newBest = await Communication.Agent.sendBelief(
+                await BeliefSet.getMe().performAction(
                     client,
-                    {
-                        info: BeliefSet.getMe(),
-                        perceivedParcels: Array.from(BeliefSet.getParcels()),
-                        perceivedAgents: Array.from(BeliefSet.getAgents()),
-                        carriedByMe: BeliefSet.getCarriedByMe()
-                    }
+                    this.requestedIntention,
                 );
+                await sleep(200);
 
-                if (failed && Coordinator.equalsIntention(newBest, this.requestedIntention)) {
-                    console.log("swapping", Intentions.requestedIntention, newBest);
-        
-                    Intentions.requestedIntention = await Communication.Agent.swapIntention(client, newBest);
-        
+                let newBest = await Communication.Agent.sendBelief(client, {
+                    info: BeliefSet.getMe(),
+                    perceivedParcels: Array.from(BeliefSet.getParcels()),
+                    perceivedAgents: Array.from(BeliefSet.getAgents()),
+                    carriedByMe: BeliefSet.getCarriedByMe(),
+                });
+
+                if (
+                    failed &&
+                    Coordinator.equalsIntention(
+                        newBest,
+                        this.requestedIntention,
+                    )
+                ) {
+                    console.log(
+                        "swapping",
+                        Intentions.requestedIntention,
+                        newBest,
+                    );
+                    previousIntention = this.requestedIntention;
+                    Intentions.requestedIntention =
+                        await Communication.Agent.swapIntention(
+                            client,
+                            newBest,
+                        );
+
                     failed = false;
                 }
 
-                console.log(BeliefSet.getMe(), newBest, Intentions.requestedIntention)
+                console.log(
+                    BeliefSet.getMe(),
+                    newBest,
+                    Intentions.requestedIntention,
+                );
 
                 if (
-                    this.shouldStop || 
+                    this.shouldStop ||
                     (this.requestedIntention.gain < newBest.gain &&
-                    (this.requestedIntention.tile.x !== newBest.tile.x || this.requestedIntention.tile.y !== newBest.tile.y))
+                        (this.requestedIntention.tile.x !== newBest.tile.x ||
+                            this.requestedIntention.tile.y !== newBest.tile.y))
                 ) {
                     console.log("New intention found");
 
                     await Communication.Agent.setIntentionStatus(
                         client,
                         {
-                            agentId: BeliefSet.getMe().id, 
-                            intention: this.requestedIntention, 
-                            isActive: true, 
-                            forcedDelivery: false
+                            agentId: BeliefSet.getMe().id,
+                            intention: this.requestedIntention,
+                            isActive: true,
+                            forcedDelivery: false,
                         },
                         false,
                     );
-                    
+
+                    previousIntention = this.requestedIntention;
                     this.requestedIntention = newBest;
                     this.shouldStop = false;
-                    
+
                     path = Me.pathTo(this.requestedIntention.tile);
-                    
+
                     if (path.status === "success") {
                         actions = computeActions(path.path);
                     } else {
@@ -155,10 +183,10 @@ class Intentions {
                     await Communication.Agent.setIntentionStatus(
                         client,
                         {
-                            agentId: BeliefSet.getMe().id, 
-                            intention: newBest, 
+                            agentId: BeliefSet.getMe().id,
+                            intention: newBest,
                             isActive: true,
-                            forcedDelivery: false
+                            forcedDelivery: false,
                         },
                         false,
                     );
@@ -172,10 +200,17 @@ class Intentions {
             //     this.success = false;
             //     throw "error";
             // }
-            
+
             if (!failed) {
-                console.log(BeliefSet.getMe().id, "target tile reached!");      
-                await BeliefSet.getMe().performAction(client, this.requestedIntention);
+                console.log(BeliefSet.getMe().id, "target tile reached!");
+                if (this.requestedIntention !== previousIntention) {
+                    await BeliefSet.getMe().performAction(
+                        client,
+                        this.requestedIntention,
+                    );
+                } else if (this.requestedIntention.parcel) {
+                    BeliefSet.removeParcel(this.requestedIntention.parcel.id);
+                }
                 failed = false;
                 this.success = true;
                 return Promise.resolve();
@@ -191,4 +226,3 @@ class Intentions {
 }
 
 export { Intention, Intentions };
-

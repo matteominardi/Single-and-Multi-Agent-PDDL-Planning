@@ -3,9 +3,10 @@ import BeliefSet from "./belief.js";
 import Communication from "./communication.js";
 import Config from "./config.js";
 import { Desire } from "./desires.js";
-import { hash } from "./helpers.js";
+import { hash, sleep } from "./helpers.js";
 import { Parcel, Parcels } from "./parcel.js";
 import { TileMap, TileType } from "./world.js";
+import { distanceBetween } from "../common/helpers.js";
 
 class Coordinator {
     static map = null;
@@ -13,7 +14,7 @@ class Coordinator {
     static currentAgentGoal = null;
     static ignoredParcels = new Map(); // used to store the parcels that should not be considered anymore
     static deliverySpots = []; // used to store the delivery spots
-    static ignoredTiles = []; // used to store the tiles that are not reachable 
+    static ignoredTiles = []; // used to store the tiles that are not reachable
     static allPerceivedParcels = []; // used to store all the perceived parcels by all agents
     static allPerceivedAgents = []; // used to store all the perceived agents by all agents
     static allIntentions = []; // used to store all the intentions of all agents
@@ -92,14 +93,13 @@ class Coordinator {
                     Coordinator.allPerceivedParcels[parcelIndex].y,
                     Coordinator.allPerceivedParcels[parcelIndex].carriedBy,
                     Coordinator.allPerceivedParcels[parcelIndex].reward,
-                )
+                ),
             );
             Coordinator.ignoredParcels.set(agentId, parcels);
         }
 
-        Coordinator.allPerceivedParcels = Coordinator.allPerceivedParcels.filter(
-            (p) => p.id !== parcelId,
-        );
+        Coordinator.allPerceivedParcels =
+            Coordinator.allPerceivedParcels.filter((p) => p.id !== parcelId);
     }
 
     static ignoreOpponentsParcels() {
@@ -107,9 +107,10 @@ class Coordinator {
             if (agent.name !== "god" && !Coordinator.hasAgent(agent.id)) {
                 for (const parcel of Coordinator.allPerceivedParcels) {
                     if (
-                        (parcel.carriedBy === null && 
-                            parcel.x === agent.x && parcel.y === agent.y) || 
-                        (parcel.carriedBy === agent.id)
+                        (parcel.carriedBy === null &&
+                            parcel.x === agent.x &&
+                            parcel.y === agent.y) ||
+                        parcel.carriedBy === agent.id
                     ) {
                         for (const teamAgentId of Coordinator.agents.keys()) {
                             Coordinator.removeParcel(teamAgentId, parcel.id);
@@ -122,7 +123,9 @@ class Coordinator {
 
     static removeDeliveryIntentions(agentId) {
         Coordinator.allIntentions = Coordinator.allIntentions.filter(
-            (i) => i.agentId !== agentId || i.intention.tile.type !== TileType.DELIVERY,
+            (i) =>
+                i.agentId !== agentId ||
+                i.intention.tile.type !== TileType.DELIVERY,
         );
     }
 
@@ -160,7 +163,10 @@ class Coordinator {
 
         for (let p in Coordinator.allPerceivedParcels) {
             if (
-                Coordinator.shouldConsiderParcel(agentId, Coordinator.allPerceivedParcels[p].id) &&
+                Coordinator.shouldConsiderParcel(
+                    agentId,
+                    Coordinator.allPerceivedParcels[p].id,
+                ) &&
                 Coordinator.allPerceivedParcels[p].carriedBy === null
             ) {
                 let score = Coordinator.computeParcelGain(
@@ -187,7 +193,10 @@ class Coordinator {
         const deliverySpots = Coordinator.getDeliverySpots();
 
         for (let d in deliverySpots) {
-            let score = Coordinator.computeDeliveryGain(agentId, deliverySpots[d]);
+            let score = Coordinator.computeDeliveryGain(
+                agentId,
+                deliverySpots[d],
+            );
 
             if (score > 0) {
                 options.push(
@@ -197,20 +206,49 @@ class Coordinator {
                             deliverySpots[d].y,
                         ),
                         score,
-                        null
+                        null,
                     ),
                 );
             }
         }
 
-        if (parcelsViewed === 0 && Coordinator.getCarriedBy(agentId).length === 0) {
+        if (
+            parcelsViewed === 0 &&
+            Coordinator.getCarriedBy(agentId).length === 0
+        ) {
             options.push(new Desire(Coordinator.getRandomTile(), 1));
         }
 
-        options = options.filter((o) =>
-            !Coordinator.ignoredTiles.some((tile) => tile.x === o.tile.x && tile.y === o.tile.y)
+        if (Coordinator.getCarriedBy(agentId).length > 4) {
+            const agentPosition = {
+                x: Math.round(Coordinator.agents.get(agentId).last_x),
+                y: Math.round(Coordinator.agents.get(agentId).last_y),
+            };
+            let closestDeliverySpot =
+                Coordinator.getClosestDeliverySpot(agentPosition);
+            console.log("closestDeliverySpot", closestDeliverySpot);
+            console.log(new Desire(closestDeliverySpot, Infinity));
+            options.push(new Desire(closestDeliverySpot, Infinity));
+        }
+
+        // options.sort((a, b) => {
+        //     if (a.gain !== b.gain) {
+        //         return b.gain - a.gain;
+        //     } else {
+        //         return (
+        //             distanceBetween(BeliefSet.getMe().getMyPosition(), a.tile) -
+        //             distanceBetween(BeliefSet.getMe().getMyPosition(), b.tile)
+        //         );
+        //     }
+        // });
+
+        options = options.filter(
+            (o) =>
+                !Coordinator.ignoredTiles.some(
+                    (tile) => tile.x === o.tile.x && tile.y === o.tile.y,
+                ),
         );
-        
+
         Coordinator.addAgentIntentions(agentId, options);
     }
 
@@ -221,7 +259,7 @@ class Coordinator {
         const factor =
             0.01 +
             Coordinator.getConfig().MOVEMENT_DURATION /
-            Coordinator.getConfig().PARCEL_DECADING_INTERVAL;
+                Coordinator.getConfig().PARCEL_DECADING_INTERVAL;
 
         const agentPosition = {
             x: Math.round(Coordinator.agents.get(agentId).last_x),
@@ -232,7 +270,7 @@ class Coordinator {
             agentPosition,
             Coordinator.getMap().getTile(parcel.x, parcel.y),
         );
-        
+
         const closestDeliverySpotDistance = Coordinator.distanceBetween(
             Coordinator.getMap().getTile(parcel.x, parcel.y),
             Coordinator.getClosestDeliverySpot(parcel),
@@ -271,7 +309,7 @@ class Coordinator {
                 deliverySpots[d].x,
                 deliverySpots[d].y,
             );
-                
+
             let ignoredTileIndex = Coordinator.ignoredTiles.findIndex(
                 (t) => t.x === deliveryTile.x && t.y === deliveryTile.y,
             );
@@ -279,7 +317,7 @@ class Coordinator {
             if (ignoredTileIndex !== -1) {
                 continue;
             }
-            
+
             let distance = Coordinator.distanceBetween(tile, deliveryTile);
             if (distance < closestDistance) {
                 closestDeliverySpot = deliveryTile;
@@ -296,12 +334,15 @@ class Coordinator {
         const factor =
             0.01 +
             Coordinator.getConfig().MOVEMENT_DURATION /
-            Coordinator.getConfig().PARCEL_DECADING_INTERVAL;
+                Coordinator.getConfig().PARCEL_DECADING_INTERVAL;
         const agentPosition = {
             x: Math.round(Coordinator.agents.get(agentId).last_x),
             y: Math.round(Coordinator.agents.get(agentId).last_y),
         };
-        const distance = Coordinator.distanceBetween(agentPosition, deliverySpot);
+        const distance = Coordinator.distanceBetween(
+            agentPosition,
+            deliverySpot,
+        );
         score += Coordinator.getAgentReward(agentId); // agentId carrying
         score -= gonnaCarry * factor * distance; // me + parcel decading
 
@@ -346,9 +387,7 @@ class Coordinator {
         const decay = 1;
 
         for (let parcel of Coordinator.allPerceivedParcels) {
-            if (
-                Coordinator.ackParcel(parcel.id)
-            ) {
+            if (Coordinator.ackParcel(parcel.id)) {
                 parcel.reward -= decay;
                 if (parcel.reward <= 1) {
                     for (const agentId of Coordinator.agents.keys()) {
@@ -370,8 +409,9 @@ class Coordinator {
                 );
             } else {
                 if (
-                    intention.intention.tile.type === TileType.DELIVERY ||
-                    intention.forcedDelivery
+                    (intention.intention.tile.type === TileType.DELIVERY ||
+                        intention.forcedDelivery) &&
+                    intention.gain !== Infinity
                 ) {
                     intention.intention.gain = Coordinator.computeDeliveryGain(
                         intention.agentId,
@@ -408,16 +448,25 @@ class Coordinator {
                     isActive: false,
                 });
             } else {
-                if (intentionIndex !== -1) {
-                    console.log("Intention already present", desire, Coordinator.allIntentions[intentionIndex])
-                    Coordinator.allIntentions[intentionIndex].intention.gain = desire.gain;
+                if (
+                    intentionIndex !== -1 &&
+                    Coordinator.allIntentions[intentionIndex].intention.gain !==
+                        Infinity
+                ) {
+                    console.log(
+                        "Intention already present",
+                        desire,
+                        Coordinator.allIntentions[intentionIndex],
+                    );
+                    Coordinator.allIntentions[intentionIndex].intention.gain =
+                        desire.gain;
                 }
             }
         }
 
         if (Coordinator.allIntentions.length > 1) {
             Coordinator.allIntentions = Coordinator.allIntentions.filter(
-                (intention) => intention.intention.gain > 1
+                (intention) => intention.intention.gain > 1,
             );
         }
     }
@@ -433,7 +482,7 @@ class Coordinator {
             (i) =>
                 i.agentId !== agentId &&
                 Coordinator.equalsIntention(i.intention, intention) &&
-                i.isActive === true
+                i.isActive === true,
         );
 
         if (intentionIndex !== -1) {
@@ -445,7 +494,17 @@ class Coordinator {
 
     static async getBestCoordinatedIntention(client, agentId) {
         Coordinator.coordinateIntentions();
-        
+
+        Coordinator.allIntentions = Coordinator.allIntentions.filter(
+            (intention) =>
+                intention.id !== null &&
+                intention.intention !== null &&
+                intention.intention.tile !== null &&
+                intention.intention.gain !== null,
+        );
+
+        // await sleep(200);
+
         const intention = Coordinator.allIntentions.find(
             (i) =>
                 i.isActive === false &&
@@ -457,8 +516,12 @@ class Coordinator {
         if (intention && intention.intention && intention.intention.tile) {
             Coordinator.setIntentionStatus(intention, true);
             Coordinator.lockIntention(agentId, intention.intention.tile);
-            await Communication.Coord.stopAgentIntention(client, agentId, intention.intention);
-            
+            await Communication.Coord.stopAgentIntention(
+                client,
+                agentId,
+                intention.intention,
+            );
+
             return intention.intention;
         } else {
             let randomIntention = new Desire(
@@ -467,25 +530,35 @@ class Coordinator {
                 null,
                 false,
             );
-            
+
             Coordinator.lockIntention(agentId, randomIntention.tile);
-            await Communication.Coord.stopAgentIntention(client, agentId, randomIntention);
-            
-            return randomIntention; 
+            await Communication.Coord.stopAgentIntention(
+                client,
+                agentId,
+                randomIntention,
+            );
+
+            return randomIntention;
         }
     }
 
     static lockIntention(agentId, tile) {
         Coordinator.allIntentions = Coordinator.allIntentions.filter(
             (intention) =>
-                intention.agentId === agentId ||    
-                intention.intention.tile !== tile
+                intention.agentId === agentId ||
+                intention.intention.tile !== tile,
         );
     }
 
     static getRandomTile() {
         let tile = null;
-        while (tile === null || tile.type === TileType.OBSTACLE || Coordinator.ignoredTiles.some((t) => t.x === tile.x && t.y === tile.y)){
+        while (
+            tile === null ||
+            tile.type === TileType.OBSTACLE ||
+            Coordinator.ignoredTiles.some(
+                (t) => t.x === tile.x && t.y === tile.y,
+            )
+        ) {
             let x = Math.floor(Math.random() * Coordinator.getMap().width);
             let y = Math.floor(Math.random() * Coordinator.getMap().height);
             tile = Coordinator.getMap().tiles[x][y];
@@ -499,7 +572,10 @@ class Coordinator {
             const intentionIndex = Coordinator.allIntentions.findIndex(
                 (i) =>
                     i.agentId === agentId &&
-                    Coordinator.equalsIntention(i.intention, intention.intention),
+                    Coordinator.equalsIntention(
+                        i.intention,
+                        intention.intention,
+                    ),
             );
             if (intentionIndex !== -1) {
                 Coordinator.allIntentions[intentionIndex].isActive = status;
@@ -509,14 +585,19 @@ class Coordinator {
 
     static async shiftAgentIntentions(client, agentId, previousIntention) {
         const intentionIndex = Coordinator.allIntentions.findIndex(
-            (i) => i.agentId === agentId && Coordinator.equalsIntention(i.intention, previousIntention)
+            (i) =>
+                i.agentId === agentId &&
+                Coordinator.equalsIntention(i.intention, previousIntention),
         );
         // console.log("shiftAgentIntentions", agentId, intentionIndex);
         if (intentionIndex !== -1) {
             Coordinator.allIntentions.splice(intentionIndex, 1);
         }
-        
-        let newIntention = await Coordinator.getBestCoordinatedIntention(client, agentId);
+
+        let newIntention = await Coordinator.getBestCoordinatedIntention(
+            client,
+            agentId,
+        );
         return newIntention;
     }
 
@@ -526,9 +607,12 @@ class Coordinator {
         );
 
         if (intention.parcel) {
-            Coordinator.allPerceivedParcels = Coordinator.allPerceivedParcels.filter(
-                (p) => p.x !== intention.parcel.x || p.y !== intention.parcel.y,
-            );
+            Coordinator.allPerceivedParcels =
+                Coordinator.allPerceivedParcels.filter(
+                    (p) =>
+                        p.x !== intention.parcel.x ||
+                        p.y !== intention.parcel.y,
+                );
         }
     }
 
@@ -538,19 +622,20 @@ class Coordinator {
                 Coordinator.allIntentions,
                 agentId,
             );
-            Coordinator.allIntentions = Coordinator.allIntentions.concat(agentIntentions);
+            Coordinator.allIntentions =
+                Coordinator.allIntentions.concat(agentIntentions);
         }
 
         Coordinator.allIntentions = Coordinator.filterIntentionsByAgent();
 
         Coordinator.allIntentions = Coordinator.allIntentions.filter(
-            (intention) => 
-                intention.id !== null && 
+            (intention) =>
+                intention.id !== null &&
                 intention.intention !== null &&
                 intention.intention.tile !== null &&
-                intention.intention.gain !== null 
-        );           
-        
+                intention.intention.gain !== null,
+        );
+
         Coordinator.allIntentions.sort(
             (a, b) => b.intention.gain - a.intention.gain,
         );
@@ -596,11 +681,11 @@ class Coordinator {
                 x: Math.round(Coordinator.agents.get(agentId).last_x),
                 y: Math.round(Coordinator.agents.get(agentId).last_y),
             };
-    
+
             Coordinator.currentAgentGoal = intention.intention.tile;
-    
+
             let path = Coordinator.computePath(agentPosition);
-    
+
             if (path.status !== "success") {
                 continue;
             }
@@ -610,7 +695,7 @@ class Coordinator {
                 (selectedAction) =>
                     selectedAction.agentId !== agentId &&
                     selectedAction.isActive &&
-                    // selectedAction.intention && 
+                    // selectedAction.intention &&
                     !Coordinator.equalsIntention(
                         selectedAction.intention,
                         intention.intention,
@@ -622,13 +707,12 @@ class Coordinator {
                     ),
             );
 
-            let teamInterference = Coordinator.checkTeamInterference(agentId, path);
+            let teamInterference = Coordinator.checkTeamInterference(
+                agentId,
+                path,
+            );
 
-            if (
-                !isInterference &&
-                !Coordinator.checkOpponentInterference(agentId, path) &&
-                !teamInterference.existsIntersection
-            ) {
+            if (!isInterference && !teamInterference.existsIntersection) {
                 selectedActions.push(intention);
             } else if (
                 !isInterference &&
@@ -638,12 +722,7 @@ class Coordinator {
                 const lastValidTile = teamInterference.lastValidTile;
                 selectedActions.push({
                     agentId: agentId,
-                    intention: new Desire(
-                        lastValidTile,
-                        intention.intention.gain,
-                        null,
-                        true,
-                    ),
+                    intention: new Desire(lastValidTile, Infinity, null, true),
                     isActive: false,
                 });
             }
@@ -665,7 +744,10 @@ class Coordinator {
     }
 
     static isEnd(tile) {
-        const end = Coordinator.getMap().getTile(Coordinator.currentAgentGoal.x, Coordinator.currentAgentGoal.y);
+        const end = Coordinator.getMap().getTile(
+            Coordinator.currentAgentGoal.x,
+            Coordinator.currentAgentGoal.y,
+        );
         return end.x === tile.x && end.y === tile.y;
     }
 
@@ -675,13 +757,14 @@ class Coordinator {
 
     static heuristic(tile) {
         return (
-            Math.abs(tile.x - Coordinator.currentAgentGoal.x) + Math.abs(tile.y - Coordinator.currentAgentGoal.y)
+            Math.abs(tile.x - Coordinator.currentAgentGoal.x) +
+            Math.abs(tile.y - Coordinator.currentAgentGoal.y)
         );
     }
 
     static checkTeamInterference(agentId, path) {
         let finalTile = path.path[path.path.length - 1];
-        path = path.path.slice(0,2);
+        path = path.path.slice(0, 2);
 
         const visitedTiles = new Set();
         let lastValidTile = path[0];
@@ -711,11 +794,14 @@ class Coordinator {
                         agentId: agentOnTile[0],
                         intention: new Desire(
                             lastValidTile,
-                            Coordinator.computeParcelGain(agentOnTile[0], carriedParcel),
+                            Coordinator.computeParcelGain(
+                                agentOnTile[0],
+                                carriedParcel,
+                            ),
                             carriedParcel,
-                            false
+                            false,
                         ),
-                        isActive: false
+                        isActive: false,
                     });
                 }
                 break;
@@ -741,7 +827,11 @@ class Coordinator {
 
         // Iterate over the perceived agents and check if any tile is not available
         for (const agent of Coordinator.allPerceivedAgents) {
-            if (agent.name === "god" || agent.id === agentId || Coordinator.hasAgent(agent.id)) {
+            if (
+                agent.name === "god" ||
+                agent.id === agentId ||
+                Coordinator.hasAgent(agent.id)
+            ) {
                 continue;
             }
             const key = `${agent.x},${agent.y}`;
