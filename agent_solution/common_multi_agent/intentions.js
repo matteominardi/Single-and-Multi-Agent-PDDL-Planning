@@ -1,6 +1,6 @@
 import BeliefSet from "./belief.js";
 import Communication from "./communication.js";
-import { computeActions, computeDeliveryGain, computeParcelGain } from "./helpers.js";
+import { computeActions, computeDeliveryGain, computeParcelGain, sleep } from "./helpers.js";
 import Me from "./me.js";
 import { TileType } from "./world.js";
 import Coordinator from "./coordinator.js";
@@ -101,13 +101,15 @@ class Intentions {
 
                 await BeliefSet.getMe().performAction(client, this.requestedIntention);
 
+                await sleep(100);
+
                 let newBest = await Communication.Agent.sendBelief(
                     client,
                     {
                         info: BeliefSet.getMe(),
                         perceivedParcels: Array.from(BeliefSet.getParcels()),
                         perceivedAgents: Array.from(BeliefSet.getAgents()),
-                        carriedByMe: BeliefSet.getCarriedByMe(),
+                        carriedByMe: BeliefSet.getCarriedByMe()
                     }
                 );
 
@@ -119,7 +121,7 @@ class Intentions {
                     failed = false;
                 }
 
-                console.log(BeliefSet.getMe(), newBest)
+                console.log(BeliefSet.getMe(), newBest, Intentions.requestedIntention)
 
                 if (
                     this.shouldStop || 

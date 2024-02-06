@@ -47,11 +47,17 @@ setTimeout(async () => {
     }
 
     Communication.Agent.agentId = agentId;
+    BeliefSet.computeDeliverySpots();
+
+    console.log("Sending constraints...")
+    await Communication.Agent.sendConstraints(client, {
+        deliverySpots: BeliefSet.deliverySpots,
+        ignoredTiles: BeliefSet.ignoredTiles,
+    });
+    console.log("...done!")
 
     while (true) {
         BeliefSet.decayParcelsReward();
-        // Intentions.decayGains();
-        // Intentions.filterGains();
 
         let perceivedParcels = Array.from(BeliefSet.getParcels());
         perceivedParcels = perceivedParcels.filter(
@@ -66,14 +72,14 @@ setTimeout(async () => {
             perceivedAgents: perceivedAgents,
             carriedByMe: BeliefSet.getCarriedByMe(),
         });
-
+        
         Intentions.requestedIntention = target;
 
         if (failed && Coordinator.equalsIntention(target, previousTarget)) {
             console.log(agentId, "swapping", Intentions.requestedIntention, previousTarget);
 
             Intentions.requestedIntention = await Communication.Agent.swapIntention(client, Intentions.requestedIntention);
-            console.log("obtained after swapping", Intentions.requestedIntention);
+
             failed = false;
         }
 
@@ -92,10 +98,11 @@ setTimeout(async () => {
         if (!previousTarget || !patrolling) {
             previousTarget = Intentions.requestedIntention;
         }
+        
+        console.log("intention", Intentions.requestedIntention);
 
         await Intentions.achieve(client)
         .then(async () => {
-            console.log("Sono nel then");
             await Communication.Agent.removeCompletedIntention(
                 client,
                 Intentions.requestedIntention,
@@ -104,6 +111,7 @@ setTimeout(async () => {
         .catch(async (error) => {
             console.log("Sono nel catch", error);
             failed = true;
+            previousTarget = Intentions.requestedIntention;
             await Communication.Agent.setIntentionStatus(
                 client,
                 { 

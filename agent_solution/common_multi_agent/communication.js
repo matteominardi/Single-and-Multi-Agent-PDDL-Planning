@@ -6,6 +6,7 @@ class Messages {
     static IM_COORDINATOR = "im_coordinator";
     static AGENT_BELIEF = "agent_belief";
     static INTENTION = "intention";
+    static CONSTRAINTS = "constraints";
     static SWAP_INTENTION = "swap_intention";
     static STOP_INTENTION = "stop_intention";
     static REMOVE_INTENTION = "remove_intention";
@@ -63,6 +64,15 @@ class Communication {
             let res = await client.ask(
                 this.coordinator,
                 this.toJSON(Messages.AGENT_BELIEF, belief),
+            );
+            res = JSON.parse(await res);
+            return await res.args;
+        }
+
+        static async sendConstraints(client, constraints) {
+            let res = await client.ask(
+                this.coordinator,
+                this.toJSON(Messages.CONSTRAINTS, constraints),
             );
             res = JSON.parse(await res);
             return await res.args;
@@ -141,6 +151,14 @@ class Communication {
 
                 let target = await Coordinator.getBestCoordinatedIntention(client, id);
                 reply(this.toJSON(Messages.INTENTION, target));
+            } else if (msg.message == Messages.CONSTRAINTS) {
+                let deliverySpots = msg.args.deliverySpots;
+                let ignoredTiles = msg.args.ignoredTiles;
+                console.log("received constraints", deliverySpots, ignoredTiles);
+                Coordinator.deliverySpots = deliverySpots;
+                Coordinator.ignoredTiles = ignoredTiles;
+                
+                reply(this.toJSON(Messages.ACK));
             } else if (msg.message == Messages.SWAP_INTENTION) {
                 let target = await Coordinator.shiftAgentIntentions(client, id, msg.args);
                 reply(this.toJSON(Messages.INTENTION, target));

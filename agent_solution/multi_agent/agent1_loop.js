@@ -46,11 +46,17 @@ setTimeout(async () => {
     }
 
     Communication.Agent.agentId = agentId;
+    BeliefSet.computeDeliverySpots();
+
+    console.log("Sending constraints...")
+    await Communication.Agent.sendConstraints(client, {
+        deliverySpots: BeliefSet.deliverySpots,
+        ignoredTiles: BeliefSet.ignoredTiles,
+    });
+    console.log("...done!")
 
     while (true) {
         BeliefSet.decayParcelsReward();
-        // Intentions.decayGains();
-        // Intentions.filterGains();
 
         let perceivedParcels = Array.from(BeliefSet.getParcels());
         perceivedParcels = perceivedParcels.filter(
@@ -104,6 +110,7 @@ setTimeout(async () => {
         .catch(async (error) => {
             console.log("Sono nel catch", error);
             failed = true;
+            previousTarget = Intentions.requestedIntention;
             await Communication.Agent.setIntentionStatus(
                 client,
                 { 

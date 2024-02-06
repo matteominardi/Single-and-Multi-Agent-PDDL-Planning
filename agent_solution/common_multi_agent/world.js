@@ -83,7 +83,10 @@ class TileMap {
         for (let x = 0; x < this.width; x++) {
             for (let y = 0; y < this.height; y++) {
                 const tile = this.tiles[x][y];
-                if (tile.type === TileType.DELIVERY) {
+                let isReachable = BeliefSet.checkTileReachable(tile);
+                if (!isReachable) {
+                    BeliefSet.ignoredTiles.push({ x: tile.x, y: tile.y });
+                } else if (isReachable && tile.type === TileType.DELIVERY) {
                     deliverySpots.push(tile);
                 }
             }

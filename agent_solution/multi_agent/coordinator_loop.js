@@ -26,7 +26,7 @@ client.onAgentsSensing((agents) => updateAgents(agents));
 client.onYou((me) => updateMe(me));
 client.onConfig((config) => updateConfig(config));
 
-await sleep(100);
+await sleep(500);
 
 if (!Coordinator.isUpdatingBeliefs) {
     Coordinator.isUpdatingBeliefs = true;
