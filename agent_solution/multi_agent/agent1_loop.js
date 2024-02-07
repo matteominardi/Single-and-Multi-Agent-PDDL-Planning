@@ -104,7 +104,10 @@ setTimeout(async () => {
         .then(async () => {
             await Communication.Agent.removeCompletedIntention(
                 client,
-                Intentions.requestedIntention,
+                {
+                    intention: Intentions.requestedIntention,
+                    agentId : agentId
+                }
             );
         })
         .catch(async (error) => {

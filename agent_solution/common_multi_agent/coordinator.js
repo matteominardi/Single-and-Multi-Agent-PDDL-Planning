@@ -219,16 +219,14 @@ class Coordinator {
             options.push(new Desire(Coordinator.getRandomTile(), 1));
         }
 
-        if (Coordinator.getCarriedBy(agentId).length > 4) {
+        if (Coordinator.getCarriedBy(agentId).length > 2) {
             const agentPosition = {
                 x: Math.round(Coordinator.agents.get(agentId).last_x),
                 y: Math.round(Coordinator.agents.get(agentId).last_y),
             };
             let closestDeliverySpot =
                 Coordinator.getClosestDeliverySpot(agentPosition);
-            console.log("closestDeliverySpot", closestDeliverySpot);
-            console.log(new Desire(closestDeliverySpot, Infinity));
-            options.push(new Desire(closestDeliverySpot, Infinity));
+            options.push(new Desire(closestDeliverySpot, 999));
         }
 
         // options.sort((a, b) => {
@@ -411,7 +409,7 @@ class Coordinator {
                 if (
                     (intention.intention.tile.type === TileType.DELIVERY ||
                         intention.forcedDelivery) &&
-                    intention.gain !== Infinity
+                    intention.gain !== 999
                 ) {
                     intention.intention.gain = Coordinator.computeDeliveryGain(
                         intention.agentId,
@@ -451,7 +449,7 @@ class Coordinator {
                 if (
                     intentionIndex !== -1 &&
                     Coordinator.allIntentions[intentionIndex].intention.gain !==
-                        Infinity
+                        999
                 ) {
                     console.log(
                         "Intention already present",
@@ -601,7 +599,9 @@ class Coordinator {
         return newIntention;
     }
 
-    static removeCompletedIntention(intention) {
+    static removeCompletedIntention(payload) {
+        const intention = payload.intention;
+        const agentId = payload.agentId;
         Coordinator.allIntentions = Coordinator.allIntentions.filter(
             (i) => !Coordinator.equalsIntention(i.intention, intention),
         );
@@ -613,6 +613,10 @@ class Coordinator {
                         p.x !== intention.parcel.x ||
                         p.y !== intention.parcel.y,
                 );
+        } else {
+            Coordinator.allIntentions = Coordinator.allIntentions.filter(
+                (i) => i.agentId !== agentId || intention.parcel
+            );
         }
     }
 
@@ -722,7 +726,7 @@ class Coordinator {
                 const lastValidTile = teamInterference.lastValidTile;
                 selectedActions.push({
                     agentId: agentId,
-                    intention: new Desire(lastValidTile, Infinity, null, true),
+                    intention: new Desire(lastValidTile, 999, null, true),
                     isActive: false,
                 });
             }

@@ -162,7 +162,7 @@ class Communication {
             } else if (msg.message == Messages.SWAP_INTENTION) {
                 let target = await Coordinator.shiftAgentIntentions(client, id, msg.args);
                 reply(this.toJSON(Messages.INTENTION, target));
-            }else if (msg.message == Messages.REMOVE_INTENTION) {
+            } else if (msg.message == Messages.REMOVE_INTENTION) {
                 Coordinator.removeCompletedIntention(msg.args);
                 reply(this.toJSON(Messages.ACK));
             } else if (msg.message == Messages.SET_INTENTION_STATUS) {

@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import BeliefSet from "../common_multi_agent/belief.js";
 import Communication from "../common_multi_agent/communication.js";
 import Coordinator from "../common_multi_agent/coordinator.js";
-import { sleep } from "../common_multi_agent/helpers.js";
 import { Intentions } from "../common_multi_agent/intentions.js";
 import {
     initMap,
@@ -105,7 +104,10 @@ setTimeout(async () => {
         .then(async () => {
             await Communication.Agent.removeCompletedIntention(
                 client,
-                Intentions.requestedIntention,
+                {
+                    intention: Intentions.requestedIntention,
+                    agentId : agentId
+                }
             );
         })
         .catch(async (error) => {

@@ -93,11 +93,17 @@ class Me {
 
                     BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
 
-                    await Communication.Agent.removeCompletedIntention(client, {
-                        tile: currentTile,
-                        gain: 1,
-                        parcel: perceivedParcels[parcel],
-                    });
+                    await Communication.Agent.removeCompletedIntention(
+                        client, 
+                        {
+                            intention: {
+                                tile: currentTile,
+                                gain: 1,
+                                parcel: perceivedParcels[parcel],
+                            },
+                            agentId: BeliefSet.getMe().id
+                        }
+                    );
                     break;
                 }
             }
