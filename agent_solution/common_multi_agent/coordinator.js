@@ -623,32 +623,35 @@ class Coordinator {
             (i) => !Coordinator.equalsIntention(i.intention, intention),
         );
 
-        let parcelsToRemove = Coordinator.allPerceivedParcels.filter(
-            (p) => p.x === intention.tile.x && p.y === intention.tile.y
-        )
-
-        for (const agentId of Coordinator.agents.keys()) {
-            let parcels = Coordinator.ignoredParcels.get(agentId);
-            for (const parcel of parcelsToRemove) {
-                parcels.addParcel(
-                    new Parcel(
-                        parcel.id,
-                        parcel.x,
-                        parcel.y,
-                        parcel.carriedBy,
-                        parcel.reward,
-                    ),
-                );
+        if (!intention.intention.forcedDelivery) {
+            let parcelsToRemove = Coordinator.allPerceivedParcels.filter(
+                (p) => p.x === intention.tile.x && p.y === intention.tile.y
+            )
+    
+            for (const agentId of Coordinator.agents.keys()) {
+                let parcels = Coordinator.ignoredParcels.get(agentId);
+                for (const parcel of parcelsToRemove) {
+                    parcels.addParcel(
+                        new Parcel(
+                            parcel.id,
+                            parcel.x,
+                            parcel.y,
+                            parcel.carriedBy,
+                            parcel.reward,
+                        ),
+                    );
+                }
+                Coordinator.ignoredParcels.set(agentId, parcels);
             }
-            Coordinator.ignoredParcels.set(agentId, parcels);
+            
+            Coordinator.allPerceivedParcels =
+                Coordinator.allPerceivedParcels.filter(
+                    (p) =>
+                        p.x !== intention.tile.x ||
+                        p.y !== intention.tile.y,
+                );        
         }
 
-        Coordinator.allPerceivedParcels =
-            Coordinator.allPerceivedParcels.filter(
-                (p) =>
-                    p.x !== intention.tile.x ||
-                    p.y !== intention.tile.y,
-            );        
     }
 
     static coordinateIntentions() {
