@@ -1,14 +1,15 @@
 import BeliefSet from "./belief.js";
 import Communication from "./communication.js";
+import Coordinator from "./coordinator.js";
 import {
     computeActions,
     computeDeliveryGain,
     computeParcelGain,
+    distanceBetween,
     sleep,
 } from "./helpers.js";
-import Me from "./me.js";
+import Me, { Actions } from "./me.js";
 import { TileType } from "./world.js";
-import Coordinator from "./coordinator.js";
 
 class Intention {
     constructor(desire) {
@@ -95,6 +96,27 @@ class Intentions {
                 console.log(
                     "---------------------------------------------------",
                 );
+
+                let agents = Array.from(BeliefSet.getAgents());
+                agents = agents.filter((agent) =>
+                    distanceBetween(BeliefSet.getMap().getTile(agent.x, agent.y), BeliefSet.getMe().getMyPosition()) > 1 && 
+                    distanceBetween(BeliefSet.getMap().getTile(agent.x, agent.y), BeliefSet.getMe().getMyPosition()) < 6
+                );
+
+                console.log("Agents", agents);
+
+
+                if (agents.some((agent) => agent.name === "matteo") && BeliefSet.getCarriedByMe().length > 0){
+                    console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    await BeliefSet.getMe().do_action(client, Actions.PUT_DOWN);
+                    BeliefSet.emptyCarriedByMe();
+                    await Communication.Agent.removeCompletedIntention(
+                        client,
+                        Intentions.requestedIntention,
+                    );
+                    break;
+                } 
+
                 if (this.shouldStop === false) {
                     const action = actions.shift();
 
@@ -103,6 +125,7 @@ class Intentions {
                     } catch (err) {
                         console.log("Failed movement", err);
                         failed = true;
+                        throw "failed movement";
                         // this.success = false;
                         // this.shouldStop = true;
                     }

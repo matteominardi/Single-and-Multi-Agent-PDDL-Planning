@@ -111,28 +111,19 @@ class TileMap {
         }
         if (
             tile.x < this.width - 1 &&
-            this.tiles[tile.x + 1][tile.y].type !== TileType.OBSTACLE &&
-            Array.from(BeliefSet.getAgents()).every(
-                (agent) => agent.x !== tile.x + 1 || agent.y !== tile.y,
-            )
+            this.tiles[tile.x + 1][tile.y].type !== TileType.OBSTACLE
         ) {
             neighbours.push(this.tiles[tile.x + 1][tile.y]);
         }
         if (
             tile.y > 0 &&
-            this.tiles[tile.x][tile.y - 1].type !== TileType.OBSTACLE &&
-            Array.from(BeliefSet.getAgents()).every(
-                (agent) => agent.x !== tile.x || agent.y !== tile.y - 1,
-            )
+            this.tiles[tile.x][tile.y - 1].type !== TileType.OBSTACLE
         ) {
             neighbours.push(this.tiles[tile.x][tile.y - 1]);
         }
         if (
             tile.y < this.height - 1 &&
-            this.tiles[tile.x][tile.y + 1].type !== TileType.OBSTACLE &&
-            Array.from(BeliefSet.getAgents()).every(
-                (agent) => agent.x !== tile.x || agent.y !== tile.y + 1,
-            )
+            this.tiles[tile.x][tile.y + 1].type !== TileType.OBSTACLE
         ) {
             neighbours.push(this.tiles[tile.x][tile.y + 1]);
         }

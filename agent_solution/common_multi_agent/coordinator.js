@@ -1,12 +1,10 @@
 import aStar from "a-star";
-import BeliefSet from "./belief.js";
 import Communication from "./communication.js";
 import Config from "./config.js";
 import { Desire } from "./desires.js";
-import { hash, sleep } from "./helpers.js";
+import { hash } from "./helpers.js";
 import { Parcel, Parcels } from "./parcel.js";
 import { TileMap, TileType } from "./world.js";
-import { distanceBetween } from "../common/helpers.js";
 
 class Coordinator {
     static map = null;
@@ -227,8 +225,8 @@ class Coordinator {
             let closestDeliverySpot =
                 Coordinator.getClosestDeliverySpot(agentPosition);
             console.log("closestDeliverySpot", closestDeliverySpot);
-            console.log(new Desire(closestDeliverySpot, Infinity));
-            options.push(new Desire(closestDeliverySpot, Infinity));
+            console.log(new Desire(closestDeliverySpot, 999));
+            options.push(new Desire(closestDeliverySpot, 999));
         }
 
         // options.sort((a, b) => {
@@ -411,7 +409,7 @@ class Coordinator {
                 if (
                     (intention.intention.tile.type === TileType.DELIVERY ||
                         intention.forcedDelivery) &&
-                    intention.gain !== Infinity
+                    intention.gain !== 999
                 ) {
                     intention.intention.gain = Coordinator.computeDeliveryGain(
                         intention.agentId,
@@ -451,7 +449,7 @@ class Coordinator {
                 if (
                     intentionIndex !== -1 &&
                     Coordinator.allIntentions[intentionIndex].intention.gain !==
-                        Infinity
+                        999
                 ) {
                     console.log(
                         "Intention already present",
@@ -623,7 +621,7 @@ class Coordinator {
             (i) => !Coordinator.equalsIntention(i.intention, intention),
         );
 
-        if (!intention.intention.forcedDelivery) {
+        if (!intention.forcedDelivery) {
             let parcelsToRemove = Coordinator.allPerceivedParcels.filter(
                 (p) => p.x === intention.tile.x && p.y === intention.tile.y
             )
@@ -643,7 +641,9 @@ class Coordinator {
                 }
                 Coordinator.ignoredParcels.set(agentId, parcels);
             }
-            
+        } 
+        
+        if (intention.parcel) {
             Coordinator.allPerceivedParcels =
                 Coordinator.allPerceivedParcels.filter(
                     (p) =>
@@ -651,7 +651,6 @@ class Coordinator {
                         p.y !== intention.tile.y,
                 );        
         }
-
     }
 
     static coordinateIntentions() {
@@ -758,9 +757,10 @@ class Coordinator {
                 teamInterference.existsIntersection
             ) {
                 const lastValidTile = teamInterference.lastValidTile;
+                // const lastValidTile = agentPosition;
                 selectedActions.push({
                     agentId: agentId,
-                    intention: new Desire(lastValidTile, Infinity, null, true),
+                    intention: new Desire(lastValidTile, 999, null, true),
                     isActive: false,
                 });
             }
@@ -802,7 +802,7 @@ class Coordinator {
 
     static checkTeamInterference(agentId, path) {
         let finalTile = path.path[path.path.length - 1];
-        path = path.path.slice(0, 2);
+        path = path.path;
 
         const visitedTiles = new Set();
         let lastValidTile = path[0];
