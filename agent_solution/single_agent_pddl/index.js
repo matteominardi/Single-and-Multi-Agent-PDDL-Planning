@@ -1,10 +1,9 @@
 import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
-import { onlineSolver, PddlDomain, PddlProblem } from "@unitn-asa/pddl-client";
 import dotenv from "dotenv";
 import * as fs from "fs";
 import BeliefSet from "../common_pddl/belief.js";
 import Desires from "../common_pddl/desires.js";
-import { mySolver, sleep } from "../common_pddl/helpers.js";
+import { sleep } from "../common_pddl/helpers.js";
 import { Intentions } from "../common_pddl/intentions.js";
 import {
     initMap,
@@ -51,12 +50,21 @@ setTimeout(async () => {
         let target = Intentions.getBestIntention();
         console.log("new target", target.tile.x, target.tile.y, target.gain);
 
-        if (failed && target.equals(previousTarget)) {
+        if (
+            failed &&
+            target.tile.x === previousTarget.tile.x &&
+            target.tile.y === previousTarget.tile.y
+        ) {
             console.log("swapping");
             Intentions.queue.shift();
             target = Intentions.getBestIntention();
             failed = false;
         }
+        // else if (previousTarget && !target.equals(previousTarget) && target.gain > previousTarget.gain) {
+        //     console.log("changing ", previousTarget.tile.x, previousTarget.tile.y, previousTarget.gain,
+        //                 "with ", target.tile.x, target.tile.y, target.gain);
+        //     Intentions.stop();
+        // }
 
         if (BeliefSet.getCarriedByMe().length === 0) {
             if (!patrolling && target.gain <= 1) {
@@ -73,6 +81,9 @@ setTimeout(async () => {
         if (!previousTarget || !patrolling) {
             previousTarget = target;
         }
+        // else if (patrolling) {
+        //     target = previousTarget;
+        // }
         Intentions.requestedIntention = target;
 
         // if (previousTarget === target) {
@@ -87,10 +98,27 @@ setTimeout(async () => {
             })
             .catch((error) => {
                 console.log("Failed intention", error);
+                if (target.parcel) {
+                    BeliefSet.ignoredParcels.add(target.parcel);
+                }
+                // setTimeout(() => {
+                //     BeliefSet.ignoredParcels.delete(target.tile);
+                // }, 10000);
                 failed = true;
             });
-        // }
 
+        // if (failed && Intentions.queue.length > 1) {
+        //     console.log("swapping");
+        //     // console.log(Intentions.queue[0], Intentions.queue[1]);
+        //     [Intentions.queue[0], Intentions.queue[1]] = [Intentions.queue[1], Intentions.queue[0]];
+        //     // console.log(Intentions.queue[0], Intentions.queue[1]);
+        // } else if (Intentions.queue.length == 0) {
+        //     console.log("patrolling");
+
+        // } else {
+        //     console.log("passing into the next intention");
+        //     Intentions.queue.shift();
+        // }
         console.log("---------------------------------------------------");
         await sleep(100);
     }

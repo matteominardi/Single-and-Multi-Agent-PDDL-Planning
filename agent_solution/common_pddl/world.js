@@ -15,13 +15,13 @@ class Tile {
     constructor(x, y, delivery, parcelSpawner, obstacle = false) {
         this.x = x;
         this.y = y;
-        this.type = obstacle ?
-            TileType.OBSTACLE 
+        this.type = obstacle
+            ? TileType.OBSTACLE
             : delivery
-            ? TileType.DELIVERY
-            : parcelSpawner
-              ? TileType.NORMAL
-              : TileType.EMPTY;
+              ? TileType.DELIVERY
+              : parcelSpawner
+                ? TileType.NORMAL
+                : TileType.EMPTY;
     }
 
     equals(tile) {
@@ -67,9 +67,7 @@ class TileMap {
 
                 currentTile.push(`(tile x${i}y${j})`);
 
-                if (
-                    tile.type !== TileType.OBSTACLE 
-                ) {
+                if (tile.type !== TileType.OBSTACLE) {
                     currentTile.push(`(available x${i}y${j})`);
                 } else {
                     currentTile.push(`(not (available x${i}y${j}))`);
@@ -114,10 +112,20 @@ class TileMap {
 
     getRandomTile() {
         let tile = null;
-        while (tile === null || tile.type === TileType.EMPTY) {
-            let x = Math.floor(Math.random() * this.width);
-            let y = Math.floor(Math.random() * this.height);
-            tile = this.tiles[x][y];
+        let parcelSpawnersTiles = [];
+        for (let x = 0; x < this.width; x++) {
+            for (let y = 0; y < this.height; y++) {
+                const tile = this.tiles[x][y];
+                if (tile.type === TileType.NORMAL) {
+                    parcelSpawnersTiles.push(tile);
+                }
+            }
+        }
+        while (tile === null) {
+            const index = Math.floor(
+                Math.random() * parcelSpawnersTiles.length,
+            );
+            tile = parcelSpawnersTiles[index];
         }
         return tile;
     }
@@ -143,25 +151,41 @@ class TileMap {
         const neighbours = [];
         if (
             tile.x > 0 &&
-            this.tiles[tile.x - 1][tile.y].type !== TileType.OBSTACLE
+            this.tiles[tile.x - 1][tile.y].type !== TileType.OBSTACLE &&
+            Array.from(BeliefSet.getAgents()).every(
+                (agent) =>
+                    agent.last_x !== tile.x - 1 || agent.last_y !== tile.y,
+            )
         ) {
             neighbours.push(this.tiles[tile.x - 1][tile.y]);
         }
         if (
             tile.x < this.width - 1 &&
-            this.tiles[tile.x + 1][tile.y].type !== TileType.OBSTACLE
+            this.tiles[tile.x + 1][tile.y].type !== TileType.OBSTACLE &&
+            Array.from(BeliefSet.getAgents()).every(
+                (agent) =>
+                    agent.last_x !== tile.x + 1 || agent.last_y !== tile.y,
+            )
         ) {
             neighbours.push(this.tiles[tile.x + 1][tile.y]);
         }
         if (
             tile.y > 0 &&
-            this.tiles[tile.x][tile.y - 1].type !== TileType.OBSTACLE
+            this.tiles[tile.x][tile.y - 1].type !== TileType.OBSTACLE &&
+            Array.from(BeliefSet.getAgents()).every(
+                (agent) =>
+                    agent.last_x !== tile.x || agent.last_y !== tile.y - 1,
+            )
         ) {
             neighbours.push(this.tiles[tile.x][tile.y - 1]);
         }
         if (
             tile.y < this.height - 1 &&
-            this.tiles[tile.x][tile.y + 1].type !== TileType.OBSTACLE
+            this.tiles[tile.x][tile.y + 1].type !== TileType.OBSTACLE &&
+            Array.from(BeliefSet.getAgents()).every(
+                (agent) =>
+                    agent.last_x !== tile.x || agent.last_y !== tile.y + 1,
+            )
         ) {
             neighbours.push(this.tiles[tile.x][tile.y + 1]);
         }

@@ -12,6 +12,7 @@ async function mySolver(
 ) {
     // console.log("problem", pddlProblem);
     try {
+        console.log("sending request to planner");
         let ask = await fetch(`${remote_url}/package/${planner}/solve`, {
             method: "POST",
             headers: {
@@ -24,10 +25,17 @@ async function mySolver(
 
         let plan = await fetch(`${remote_url}${ask.result}`);
         plan = await plan.json();
-        while (plan.status === "PENDING") {
-            await sleep(1000);
+        let fail = 0;
+        while (plan.status === "PENDING" && fail < 10) {
+            await sleep(100);
+            fail++;
             plan = await fetch(`${remote_url}${ask.result}`);
             plan = await plan.json();
+            console.log(plan);
+        }
+        if (fail === 5) {
+            console.log("failed to get plan");
+            return [[], []];
         }
         plan = await plan.result.output.plan;
         // keep everything after ";;;; Solution Found"

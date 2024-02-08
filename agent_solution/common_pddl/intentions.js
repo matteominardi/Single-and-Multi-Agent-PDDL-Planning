@@ -1,9 +1,13 @@
-import { onlineSolver } from "@unitn-asa/pddl-client";
 import BeliefSet from "./belief.js";
-import Desires from "./desires.js";
-import { computeDeliveryGain, computeParcelGain, mySolver } from "./helpers.js";
-import { Actions } from "./me.js";
+import {
+    computeDeliveryGain,
+    computeParcelGain,
+    distanceBetween,
+    mySolver,
+} from "./helpers.js";
+import Me from "./me.js";
 import { TileType } from "./world.js";
+import Desires from "./desires.js";
 
 class Intention {
     constructor(desire) {
@@ -29,7 +33,7 @@ class Intentions {
                 d.tile.equals(desire.tile),
             );
 
-            if (existingDesireIndex !== -1) {
+            if (existingDesireIndex !== -1 && desire.gain !== Infinity) {
                 this.queue[existingDesireIndex].gain = desire.gain;
             } else {
                 this.queue.push(desire);
@@ -39,7 +43,14 @@ class Intentions {
 
     static sort() {
         this.queue.sort((a, b) => {
-            return b.gain - a.gain;
+            if (a.gain !== b.gain) {
+                return b.gain - a.gain;
+            } else {
+                return (
+                    distanceBetween(BeliefSet.getMe().getMyPosition(), a.tile) -
+                    distanceBetween(BeliefSet.getMe().getMyPosition(), b.tile)
+                );
+            }
         });
     }
 
@@ -52,7 +63,10 @@ class Intentions {
             if (intention.parcel) {
                 intention.gain = computeParcelGain(intention.parcel);
             } else {
-                if (intention.tile.type === TileType.DELIVERY) {
+                if (
+                    intention.tile.type === TileType.DELIVERY &&
+                    intention.gain !== Infinity
+                ) {
                     intention.gain = computeDeliveryGain(intention.tile);
                 }
             }
@@ -64,58 +78,89 @@ class Intentions {
     }
 
     static getBestIntention() {
-        return new Intention(this.queue[0]);
-    }
-
-    static async achieve(client, domain, problem) {
-        const perceivedAgents = BeliefSet.getAgents();
-
-        let [actions, tiles] = await mySolver(domain, problem);
-
-        const existsIntersection = tiles.some((tile) =>
-            perceivedAgents.some(
-                (agent) => agent.x === tile.x && agent.y === tile.y,
-            ),
-        );
-
-        if (existsIntersection) {
-            console.log(BeliefSet.getMe().id, "path blocked by another agent");
-            this.success = false;
-            // throw "path blocekd";
-            return;
-        }
-
-        const current_intention = Intentions.requestedIntention;
-        while (actions.length > 0 && !this.shouldStop) {
-            // if ((await actions.length) > 0) {
-            const action = await actions.shift();
-
+        console.log("queue", this.queue);
+        if (this.queue.length === 0) {
             let options = Desires.computeDesires();
             Intentions.add(options);
             Intentions.sort();
+            if (this.queue.length > 1) {
+                return new Intention(this.queue[1]);
+            } else {
+                return new Intention(this.queue[0]);
+            }
+        } else {
+            return new Intention(this.queue[0]);
+        }
+    }
 
-            const new_intention = this.getBestIntention();
+    static async achieve(client, domain, problem) {
+        // prendo la prima intenzione dalla coda
+        // calcolo la path per arrivare là
+        // se la path è valida, la seguo, fino a che non arrivo o la interrompo
+        // se la path non è valida, la scarto
 
-            if (
-                current_intention.gain < new_intention.gain &&
-                !current_intention.tile.equals(new_intention.tile)
-            ) {
-                console.log("New intention found");
+        if (this.shouldStop) {
+            console.log("exiting");
+            this.shouldStop = false;
+            return;
+        }
+
+        const path = Me.pathTo(this.requestedIntention.tile);
+        if (path.status === "success") {
+            const perceivedAgents = Array.from(BeliefSet.getAgents());
+
+            let [actions, tiles] = await mySolver(domain, problem);
+
+            // const existsIntersection = path.path.some((tile) =>
+            //     perceivedAgents.some(
+            //         (agent) => agent.x === tile.x && agent.y === tile.y,
+            //     ),
+            // );
+            //
+            // if (existsIntersection) {
+            //     console.log(
+            //         BeliefSet.getMe().id,
+            //         "path blocked by another agent",
+            //     );
+            //     this.success = false;
+            //     throw "path blocekd";
+            //     // return;
+            // }
+
+            let failed = false;
+
+            while (actions.length > 0 && !this.shouldStop) {
+                // if (actions.length > 0 && !this.shouldStop) {
+                const action = actions.shift();
+                try {
+                    await BeliefSet.getMe().do_action(client, action);
+                } catch (err) {
+                    console.log(err);
+                    failed = true;
+                    throw err;
+                }
+
+                await BeliefSet.getMe().performAction(client);
+            }
+
+            if (this.shouldStop) {
+                console.log(
+                    BeliefSet.getMe().id,
+                    "stopped before reaching target",
+                    this.requestedIntention.tile,
+                );
+                this.shouldStop = false;
+                this.success = false;
                 return;
             }
 
-            try {
-                await BeliefSet.getMe().do_action(client, await action);
-            } catch (err) {
-                console.log(err);
-                throw err;
+            if (!failed) {
+                console.log(BeliefSet.getMe().id, "target tile reached!");
+                await BeliefSet.getMe().performAction(client);
+                this.success = true;
             }
-
-            await BeliefSet.getMe().performAction();
-        }
-
-        if (!this.shouldStop) {
-            this.success = true;
+        } else {
+            throw "Path not found";
         }
     }
 
