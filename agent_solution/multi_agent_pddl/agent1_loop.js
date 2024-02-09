@@ -46,7 +46,7 @@ setTimeout(async () => {
     }
 
     Communication.Agent.agentId = agentId;
-    await BeliefSet.computeDeliverySpots(client);
+    BeliefSet.computeDeliverySpots();
 
     console.log("Sending constraints...");
     await Communication.Agent.sendConstraints(client, {

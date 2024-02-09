@@ -7,8 +7,8 @@ import {
     updateMe,
     updateParcels,
 } from "./callbacks.js";
-import Coordinator from "../common_multi_agent/coordinator.js";
-import { sleep } from "../common_multi_agent/helpers.js";
+import Coordinator from "../common_multi_agent_pddl/coordinator.js";
+import { sleep } from "../common_multi_agent_pddl/helpers.js";
 
 // Mattia
 const client = new DeliverooApi(
@@ -26,7 +26,7 @@ client.onAgentsSensing((agents) => updateAgents(agents));
 client.onYou((me) => updateMe(me));
 client.onConfig((config) => updateConfig(config));
 
-await sleep(100);
+await sleep(500);
 
 if (!Coordinator.isUpdatingBeliefs) {
     Coordinator.isUpdatingBeliefs = true;

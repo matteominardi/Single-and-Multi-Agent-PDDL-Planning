@@ -1,5 +1,5 @@
 import BeliefSet from "./belief.js";
-import { computePath } from "./helpers.js";
+import { computePath, getPath } from "./helpers.js";
 import { TileType } from "./world.js";
 import Communication from "./communication.js";
 
@@ -131,6 +131,13 @@ class Me {
         Me.requested_x = tile.x;
         Me.requested_y = tile.y;
         return await computePath(client, current);
+    }
+
+    static oldPathTo(tile) {
+        let current = BeliefSet.getMe().getMyPosition();
+        Me.requested_x = tile.x;
+        Me.requested_y = tile.y;
+        return getPath(current);
     }
 }
 

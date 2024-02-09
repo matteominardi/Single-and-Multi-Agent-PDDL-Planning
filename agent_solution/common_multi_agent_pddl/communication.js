@@ -143,6 +143,7 @@ class Communication {
         static async handle(client, id, name, msg, reply) {
             // reply = this.fixReply(client, reply);
             msg = this.fromJSON(msg);
+
             if (msg.message === Messages.SEARCH_COORDINATOR) {
                 console.log("position", msg.args);
                 Coordinator.updateAgent(id, msg.args);

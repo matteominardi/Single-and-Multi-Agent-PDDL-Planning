@@ -177,17 +177,6 @@ class Intentions {
                     } else {
                         throw "Path not found";
                     }
-                } else {
-                    await Communication.Agent.setIntentionStatus(
-                        client,
-                        {
-                            agentId: BeliefSet.getMe().id,
-                            intention: newBest,
-                            isActive: true,
-                            forcedDelivery: false,
-                        },
-                        false,
-                    );
                 }
             }
 

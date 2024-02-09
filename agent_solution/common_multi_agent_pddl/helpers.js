@@ -88,6 +88,7 @@ async function computePath(client, start) {
                 )
                 .map((agent) => `x${parseInt(agent.x)}y${parseInt(agent.y)}`),
     );
+
     agentsPddl.forEach(function (key) {
         const infos = mapPddl.get(key);
         // search string that starts with (available and replace it with
