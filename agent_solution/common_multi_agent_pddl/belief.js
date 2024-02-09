@@ -44,13 +44,13 @@ class BeliefSet {
         return parcels;
     }
 
-    static computeDeliverySpots(client) {
-        BeliefSet.deliverySpots = this.map.getDeliverySpots(client);
+    static async computeDeliverySpots(client) {
+        BeliefSet.deliverySpots = await this.map.getDeliverySpots(client);
     }
 
-    static checkTileReachable(client, goalTile) {
-        let path = Me.pathTo(client, goalTile);
-        return path.status === "success";
+    static async checkTileReachable(client, goalTile) {
+        let path = await Me.pathTo(client, goalTile);
+        return (await path.status) === "success";
     }
 
     static updateParcels(parcels) {

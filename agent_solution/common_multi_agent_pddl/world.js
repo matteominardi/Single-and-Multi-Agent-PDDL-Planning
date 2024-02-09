@@ -78,12 +78,15 @@ class TileMap {
         return tile;
     }
 
-    getDeliverySpots(client) {
+    async getDeliverySpots(client) {
         const deliverySpots = [];
         for (let x = 0; x < this.width; x++) {
             for (let y = 0; y < this.height; y++) {
                 const tile = this.tiles[x][y];
-                let isReachable = BeliefSet.checkTileReachable(client, tile); // TODO: maybe change with planner
+                let isReachable = await BeliefSet.checkTileReachable(
+                    client,
+                    tile,
+                ); // TODO: maybe change with planner
                 if (!isReachable) {
                     BeliefSet.ignoredTiles.push({ x: tile.x, y: tile.y });
                 } else if (isReachable && tile.type === TileType.DELIVERY) {
