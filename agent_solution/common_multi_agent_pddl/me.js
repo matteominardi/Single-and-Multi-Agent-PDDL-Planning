@@ -1,6 +1,5 @@
 import BeliefSet from "./belief.js";
-import { computePath, getPath } from "./helpers.js";
-import { Intentions } from "./intentions.js";
+import { computePath } from "./helpers.js";
 import { TileType } from "./world.js";
 import Communication from "./communication.js";
 
@@ -76,7 +75,7 @@ class Me {
                 );
             }
         } else if (
-            currentTile.type !== TileType.OBSTACLE && 
+            currentTile.type !== TileType.OBSTACLE &&
             currentTile.type !== TileType.DELIVERY
         ) {
             for (let parcel in perceivedParcels) {
@@ -94,9 +93,12 @@ class Me {
                     BeliefSet.setCarriedByMe(perceivedParcels[parcel]);
 
                     await Communication.Agent.removeCompletedIntention(client, {
-                        tile: currentTile,
-                        gain: 1,
-                        parcel: perceivedParcels[parcel],
+                        intention: {
+                            tile: currentTile,
+                            gain: 1,
+                            parcel: perceivedParcels[parcel],
+                        },
+                        agentId: BeliefSet.getMe().id,
                     });
                     break;
                 }

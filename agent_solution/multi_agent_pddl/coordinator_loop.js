@@ -1,7 +1,5 @@
 import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
 import Communication from "../common_multi_agent_pddl/communication.js";
-import Coordinator from "../common_multi_agent_pddl/coordinator.js";
-import { sleep } from "../common_multi_agent_pddl/helpers.js";
 import {
     initMap,
     updateAgents,
@@ -9,6 +7,8 @@ import {
     updateMe,
     updateParcels,
 } from "./callbacks.js";
+import Coordinator from "../common_multi_agent/coordinator.js";
+import { sleep } from "../common_multi_agent/helpers.js";
 
 // Mattia
 const client = new DeliverooApi(

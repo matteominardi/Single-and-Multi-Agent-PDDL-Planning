@@ -8,20 +8,28 @@ import Config from "./config.js";
 class BeliefSet {
     static perceivedParcels = new Parcels();
     static ignoredParcels = new Parcels();
+    static ignoredTiles = [];
     static perceivedAgents = new Agents();
+    static deliverySpots = [];
     static map = null;
     static me = new Me();
 
     static getParcels() {
         let parcels = new Parcels();
         let perceivedParcels = Array.from(this.perceivedParcels);
-        let deliverySpots = this.map.getDeliverySpots();
+
+        perceivedParcels = perceivedParcels.filter(
+            (parcel) =>
+                !this.ignoredTiles.some(
+                    (tile) => tile.x === parcel.x && tile.y === parcel.y,
+                ),
+        );
 
         for (let parcel of perceivedParcels) {
             parcel.x = Math.round(parcel.x);
             parcel.y = Math.round(parcel.y);
 
-            const isOnDeliverySpot = deliverySpots.some(
+            const isOnDeliverySpot = BeliefSet.deliverySpots.some(
                 (spot) => spot.x === parcel.x && spot.y === parcel.y,
             );
 
@@ -34,6 +42,15 @@ class BeliefSet {
         }
 
         return parcels;
+    }
+
+    static computeDeliverySpots(client) {
+        BeliefSet.deliverySpots = this.map.getDeliverySpots(client);
+    }
+
+    static checkTileReachable(client, goalTile) {
+        let path = Me.pathTo(client, goalTile);
+        return path.status === "success";
     }
 
     static updateParcels(parcels) {
@@ -71,7 +88,6 @@ class BeliefSet {
     }
 
     static removeParcel(parcelId) {
-        // this.perceivedParcels.deleteParcel(parcelId);
         this.ignoredParcels.addParcel(
             this.perceivedParcels.getParcel(parcelId),
         );
@@ -113,7 +129,7 @@ class BeliefSet {
 
     static updateAgents(agents) {
         this.perceivedAgents = new Agents();
-        
+
         for (let a in agents) {
             // check if id already present
             if (this.perceivedAgents.getAgent(agents[a].id) !== null) {
@@ -173,11 +189,10 @@ class BeliefSet {
     static getClosestDeliverySpot(tile) {
         let closestDeliverySpot = null;
         let closestDistance = Infinity;
-        let deliverySpots = this.map.getDeliverySpots();
-        for (let d in deliverySpots) {
+        for (let d in BeliefSet.deliverySpots) {
             const deliveryTile = this.getMap().getTile(
-                deliverySpots[d].x,
-                deliverySpots[d].y,
+                BeliefSet.deliverySpots[d].x,
+                BeliefSet.deliverySpots[d].y,
             );
             let distance = distanceBetween(tile, deliveryTile);
             if (distance < closestDistance) {

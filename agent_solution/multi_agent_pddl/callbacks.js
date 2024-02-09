@@ -145,5 +145,4 @@ function updateConfig(config) {
     // console.log(BeliefSet.getConfig());
 }
 
-export { initMap, updateAgents, updateConfig, updateMe, updateParcels };
-
+export { initMap, updateAgents, updateMe, updateParcels, updateConfig };

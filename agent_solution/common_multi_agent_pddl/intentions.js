@@ -1,13 +1,14 @@
 import BeliefSet from "./belief.js";
 import Communication from "./communication.js";
-import Coordinator from "./coordinator.js";
 import {
     computeActions,
     computeDeliveryGain,
     computeParcelGain,
+    sleep,
 } from "./helpers.js";
 import Me from "./me.js";
 import { TileType } from "./world.js";
+import Coordinator from "./coordinator.js";
 
 class Intention {
     constructor(desire) {
@@ -109,30 +110,49 @@ class Intentions {
                     client,
                     this.requestedIntention,
                 );
+                await sleep(200);
 
-                // let newBest = await Communication.Agent.sendBelief(
-                //     client,
-                //     {
-                //         info: BeliefSet.getMe(),
-                //         perceivedParcels: Array.from(BeliefSet.getParcels()),
-                //         perceivedAgents: Array.from(BeliefSet.getAgents()),
-                //         carriedByMe: BeliefSet.getCarriedByMe(),
-                //     }
-                // );
+                // let newBest = await Communication.Agent.sendBelief(client, {
+                //     info: BeliefSet.getMe(),
+                //     perceivedParcels: Array.from(BeliefSet.getParcels()),
+                //     perceivedAgents: Array.from(BeliefSet.getAgents()),
+                //     carriedByMe: BeliefSet.getCarriedByMe(),
+                // });
 
-                // if (failed && Coordinator.equalsIntention(newBest, this.requestedIntention)) {
-                //     console.log(agentId, "swapping", Intentions.requestedIntention, newBest);
-                //
-                //     Intentions.requestedIntention = await Communication.Agent.swapIntention(client, newBest);
+                // if (
+                //     failed &&
+                //     Coordinator.equalsIntention(
+                //         newBest,
+                //         this.requestedIntention,
+                //     )
+                // ) {
+                //     console.log(
+                //         "swapping",
+                //         Intentions.requestedIntention,
+                //         newBest,
+                //     );
+                //     previousIntention = this.requestedIntention;
+                //     Intentions.requestedIntention =
+                //         await Communication.Agent.swapIntention(
+                //             client,
+                //             newBest,
+                //         );
                 //
                 //     failed = false;
                 // }
 
-                // console.log(BeliefSet.getMe(), newBest)
+                // console.log(
+                //     BeliefSet.getMe(),
+                //     newBest,
+                //     Intentions.requestedIntention,
+                // );
 
-                if (this.shouldStop) {
+                if (
+                    this.shouldStop // ||
                     // (this.requestedIntention.gain < newBest.gain &&
-                    // (this.requestedIntention.tile.x !== newBest.tile.x || this.requestedIntention.tile.y !== newBest.tile.y))
+                    //     (this.requestedIntention.tile.x !== newBest.tile.x ||
+                    //         this.requestedIntention.tile.y !== newBest.tile.y))
+                ) {
                     console.log("New intention found");
 
                     await Communication.Agent.setIntentionStatus(
@@ -146,16 +166,28 @@ class Intentions {
                         false,
                     );
 
+                    // previousIntention = this.requestedIntention;
                     // this.requestedIntention = newBest;
-                    // this.shouldStop = false;
+                    this.shouldStop = false;
 
-                    // path = Me.pathTo(this.requestedIntention.tile);
+                    path = Me.pathTo(this.requestedIntention.tile);
 
-                    // if (path.status === "success") {
-                    //     actions = computeActions(path.path);
-                    // } else {
-                    //     throw "Path not found";
-                    // }
+                    if (path.status === "success") {
+                        actions = computeActions(path.path);
+                    } else {
+                        throw "Path not found";
+                    }
+                } else {
+                    await Communication.Agent.setIntentionStatus(
+                        client,
+                        {
+                            agentId: BeliefSet.getMe().id,
+                            intention: newBest,
+                            isActive: true,
+                            forcedDelivery: false,
+                        },
+                        false,
+                    );
                 }
             }
 
@@ -173,6 +205,10 @@ class Intentions {
                     client,
                     this.requestedIntention,
                 );
+
+                if (this.requestedIntention.parcel) {
+                    BeliefSet.removeParcel(this.requestedIntention.parcel.id);
+                }
                 failed = false;
                 this.success = true;
                 return Promise.resolve();
