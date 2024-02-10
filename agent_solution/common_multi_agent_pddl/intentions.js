@@ -170,13 +170,13 @@ class Intentions {
                     // this.requestedIntention = newBest;
                     this.shouldStop = false;
 
-                    path = Me.pathTo(this.requestedIntention.tile);
-
-                    if (path.status === "success") {
-                        actions = computeActions(path.path);
-                    } else {
-                        throw "Path not found";
-                    }
+                    // path = Me.pathTo(this.requestedIntention.tile);
+                    //
+                    // if (path.status === "success") {
+                    //     actions = computeActions(path.path);
+                    // } else {
+                    //     throw "Path not found";
+                    // }
                 }
             }
 

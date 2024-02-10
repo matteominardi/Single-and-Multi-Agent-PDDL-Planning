@@ -14,7 +14,7 @@
     "client_1_multi_pddl": "node agent_solution/multi_agent_pddl/agent1_loop.js",
     "client_2_multi_pddl": "node agent_solution/multi_agent_pddl/agent2_loop.js",
     "coordinator_pddl": "node agent_solution/multi_agent_pddl/coordinator_loop.js",
-    "planner": "docker-compose -f planning-as-a-service/server/docker-compose.yml up"
+    "planner": "docker-compose -f planning-as-a-service/server/docker-compose.yml up -scale worker=5"
   },
   "repository": {
     "type": "git",

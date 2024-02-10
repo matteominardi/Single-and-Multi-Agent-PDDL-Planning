@@ -613,11 +613,13 @@ class Coordinator {
                         p.x !== intention.parcel.x ||
                         p.y !== intention.parcel.y,
                 );
-        } 
-
-        Coordinator.allIntentions = Coordinator.allIntentions.filter(
-            (i) => i.agentId !== agentId || (i.gain !== 999 && i.parcel !== null) 
-        );    
+        } else {
+            Coordinator.allIntentions = Coordinator.allIntentions.filter(
+                (i) =>
+                    i.agentId !== agentId ||
+                    (i.gain !== 999 && i.parcel !== null),
+            );
+        }
     }
 
     static coordinateIntentions() {
