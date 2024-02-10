@@ -1,8 +1,6 @@
 import aStar from "a-star";
 import BeliefSet from "./belief.js";
 import Me, { Actions } from "./me.js";
-import { Tile } from "./world.js";
-import { parse } from "dotenv";
 
 async function mySolver(
     pddlDomain,
@@ -12,7 +10,7 @@ async function mySolver(
 ) {
     // console.log("problem", pddlProblem);
     try {
-        console.log("sending request to planner");
+        // console.log("sending request to planner");
         let ask = await fetch(`${remote_url}/package/${planner}/solve`, {
             method: "POST",
             headers: {
@@ -31,9 +29,9 @@ async function mySolver(
             fail++;
             plan = await fetch(`${remote_url}${ask.result}`);
             plan = await plan.json();
-            console.log(plan);
+            // console.log(plan);
         }
-        if (fail === 5) {
+        if (fail === 10) {
             console.log("failed to get plan");
             return [[], []];
         }
@@ -42,7 +40,7 @@ async function mySolver(
         if (plan.includes(";;;; Solution Found")) {
             plan = await plan.split(";;;; Solution Found")[1];
         } else {
-            return [];
+            return [[], []];
         }
         plan = await plan.split("\n");
         // keep only the lines that contains (
@@ -56,11 +54,11 @@ async function mySolver(
         // remove move_ prefix
         const actions = await plan.map((line) => line[0].replace("move_", ""));
         const tiles = await plan.map((tile) => {
-            const match = tile[tile.length - 1].match(/x(\d)y(\d)/);
-            return BeliefSet.getMap().getTile(
-                parseInt(match[1]),
-                parseInt(match[2]),
-            );
+            const target = tile[3];
+            // get number between x and y
+            const x = parseInt(target.split("x")[1].split("y")[0]);
+            const y = parseInt(target.split("y")[1]);
+            return BeliefSet.getMap().getTile(x, y);
         });
         // return path and tiles
         return [actions, tiles];
@@ -166,12 +164,12 @@ function computeDeliveryGain(deliverySpot) {
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
 export {
-    mySolver,
+    computeActions,
+    computeDeliveryGain,
+    computeParcelGain,
+    distanceBetween,
     getPath,
     isEnd,
-    distanceBetween,
-    computeActions,
-    computeParcelGain,
-    computeDeliveryGain,
+    mySolver,
     sleep,
 };

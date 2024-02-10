@@ -28,14 +28,14 @@ async function mySolver(
         let plan = await fetch(`${remote_url}${ask.result}`);
         plan = await plan.json();
         let fail = 0;
-        while (plan.status === "PENDING" && fail < 5) {
-            await sleep(1000);
+        while (plan.status === "PENDING" && fail < 10) {
+            await sleep(500);
             fail++;
             console.log("waiting for plan");
             plan = await fetch(`${remote_url}${ask.result}`);
             plan = await plan.json();
         }
-        if (fail === 5) {
+        if (fail === 10) {
             console.log("failed to get plan");
             return [[], []];
         }
@@ -44,7 +44,7 @@ async function mySolver(
         if (plan.includes(";;;; Solution Found")) {
             plan = await plan.split(";;;; Solution Found")[1];
         } else {
-            return [];
+            return [[], []];
         }
         plan = await plan.split("\n");
         // keep only the lines that contains (
@@ -58,11 +58,11 @@ async function mySolver(
         // remove move_ prefix
         const actions = await plan.map((line) => line[0].replace("move_", ""));
         const tiles = await plan.map((tile) => {
-            const match = tile[tile.length - 1].match(/x(\d)y(\d)/);
-            return BeliefSet.getMap().getTile(
-                parseInt(match[1]),
-                parseInt(match[2]),
-            );
+            const target = tile[3];
+            // get number between x and y
+            const x = parseInt(target.split("x")[1].split("y")[0]);
+            const y = parseInt(target.split("y")[1]);
+            return BeliefSet.getMap().getTile(x, y);
         });
         // return path and tiles
         return [actions, tiles];

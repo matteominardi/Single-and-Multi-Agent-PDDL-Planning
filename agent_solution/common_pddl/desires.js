@@ -65,7 +65,7 @@ class Desires {
         }
         // check for all options if their .parcel is null
 
-        if (parcelsViewed === 0 && BeliefSet.getCarriedByMe().length === 0) {
+        if (BeliefSet.getCarriedByMe().length === 0) {
             options.push(new Desire(BeliefSet.getMap().getRandomTile(), 1));
         }
 
@@ -73,8 +73,7 @@ class Desires {
             let closestDeliverySpot = BeliefSet.getClosestDeliverySpot(
                 BeliefSet.getMe().getMyPosition(),
             );
-            console.log("closestDeliverySpot", closestDeliverySpot);
-            console.log(new Desire(closestDeliverySpot, Infinity));
+            // console.log("closestDeliverySpot", closestDeliverySpot);
             options.push(new Desire(closestDeliverySpot, Infinity));
         }
 
