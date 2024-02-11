@@ -73,8 +73,8 @@ class Desires {
             let closestDeliverySpot = BeliefSet.getClosestDeliverySpot(
                 BeliefSet.getMe().getMyPosition(),
             );
-            console.log("closestDeliverySpot", closestDeliverySpot);
-            console.log(new Desire(closestDeliverySpot, Infinity));
+            // console.log("closestDeliverySpot", closestDeliverySpot);
+            // console.log(new Desire(closestDeliverySpot, Infinity));
             options.push(new Desire(closestDeliverySpot, Infinity));
         }
 

@@ -54,25 +54,25 @@ class Me {
 
     async performAction(client) {
         let currentTile = this.getMyPosition();
-        console.log(
-            "currentTile",
-            currentTile.x,
-            currentTile.y,
-            currentTile.type,
-        );
-        console.log(
-            "my reward ",
-            BeliefSet.getMyReward(),
-            "getCarriedByMe",
-            BeliefSet.getCarriedByMe().length,
-        );
-        let perceivedParcels = Array.from(BeliefSet.getParcels());
-        console.log(
-            "perceivedParcels",
-            perceivedParcels.length,
-            perceivedParcels,
-        );
-        console.log(BeliefSet.ignoredParcels);
+        // console.log(
+        //     "currentTile",
+        //     currentTile.x,
+        //     currentTile.y,
+        //     currentTile.type,
+        // );
+        // console.log(
+        //     "my reward ",
+        //     BeliefSet.getMyReward(),
+        //     "getCarriedByMe",
+        //     BeliefSet.getCarriedByMe().length,
+        // );
+        // let perceivedParcels = Array.from(BeliefSet.getParcels());
+        // console.log(
+        //     "perceivedParcels",
+        //     perceivedParcels.length,
+        //     perceivedParcels,
+        // );
+        // console.log(BeliefSet.ignoredParcels);
         if (
             currentTile.type === TileType.DELIVERY &&
             BeliefSet.getCarriedByMe().length > 0

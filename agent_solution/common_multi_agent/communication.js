@@ -31,9 +31,13 @@ class Communication {
                 console.log(name, "is the coordinator");
                 reply(this.toJSON(Messages.ACK));
             } else if (msg.message === Messages.STOP_INTENTION) {
-                if (msg.args.agentId !== this.agentId && 
+                if (
+                    msg.args.agentId !== this.agentId &&
                     Intentions.requestedIntention &&
-                    Coordinator.equalsIntention(msg.args.intention, Intentions.requestedIntention)
+                    Coordinator.equalsIntention(
+                        msg.args.intention,
+                        Intentions.requestedIntention,
+                    )
                 ) {
                     Intentions.shouldStop = true;
                 } else {
@@ -140,27 +144,34 @@ class Communication {
                 let carriedBy = msg.args.carriedBy;
 
                 Coordinator.updateAgent(id, msg.args.info);
-                
+
                 Coordinator.addPerceivedParcels(perceivedParcels);
                 Coordinator.addPerceivedAgents(perceivedAgents);
-                
+
                 Coordinator.ignoreOpponentsParcels();
                 Coordinator.decayAllIntentionGains();
 
                 Coordinator.computeAllDesires();
 
-                let target = await Coordinator.getBestCoordinatedIntention(client, id);
+                let target = await Coordinator.getBestCoordinatedIntention(
+                    client,
+                    id,
+                );
                 reply(this.toJSON(Messages.INTENTION, target));
             } else if (msg.message == Messages.CONSTRAINTS) {
                 let deliverySpots = msg.args.deliverySpots;
                 let ignoredTiles = msg.args.ignoredTiles;
-                console.log("received constraints", deliverySpots, ignoredTiles);
+                // console.log("received constraints", deliverySpots, ignoredTiles);
                 Coordinator.deliverySpots = deliverySpots;
                 Coordinator.ignoredTiles = ignoredTiles;
-                
+
                 reply(this.toJSON(Messages.ACK));
             } else if (msg.message == Messages.SWAP_INTENTION) {
-                let target = await Coordinator.shiftAgentIntentions(client, id, msg.args);
+                let target = await Coordinator.shiftAgentIntentions(
+                    client,
+                    id,
+                    msg.args,
+                );
                 reply(this.toJSON(Messages.INTENTION, target));
             } else if (msg.message == Messages.REMOVE_INTENTION) {
                 Coordinator.removeCompletedIntention(msg.args);
@@ -182,7 +193,7 @@ class Communication {
             if (reply) return reply;
             else
                 return (id, msg) => {
-                    console.log("sending", msg, "to", client);
+                    // console.log("sending", msg, "to", client);
                     return client.ask(id, this.toJSON(msg));
                 };
         }
@@ -199,7 +210,10 @@ class Communication {
 
         static async stopAgentIntention(client, id, intention) {
             await client.shout(
-                this.toJSON(Messages.STOP_INTENTION, {agentId: id, intention: intention}),
+                this.toJSON(Messages.STOP_INTENTION, {
+                    agentId: id,
+                    intention: intention,
+                }),
             );
         }
     };

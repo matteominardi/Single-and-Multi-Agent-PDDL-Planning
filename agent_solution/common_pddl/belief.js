@@ -10,6 +10,7 @@ class BeliefSet {
     static perceivedParcels = new Parcels();
     static ignoredParcels = new Parcels();
     static perceivedAgents = new Agents();
+    static ignoredTiles = [];
     static map = null;
     static me = new Me();
 
@@ -35,6 +36,10 @@ class BeliefSet {
         }
 
         return parcels;
+    }
+
+    static computeDeliverySpots() {
+        BeliefSet.deliverySpots = this.map.getDeliverySpots();
     }
 
     static updateParcels(parcels) {
@@ -114,7 +119,7 @@ class BeliefSet {
 
     static updateAgents(agents) {
         this.perceivedAgents = new Agents();
-        
+
         for (let a in agents) {
             // check if id already present
             if (this.perceivedAgents.getAgent(agents[a].id) !== null) {
@@ -133,6 +138,11 @@ class BeliefSet {
 
     static initMap(width, height, tiles) {
         BeliefSet.map = new TileMap(width, height, tiles);
+    }
+
+    static checkTileReachable(goalTile) {
+        let path = Me.pathTo(goalTile);
+        return path.status === "success";
     }
 
     static toPddl(target) {

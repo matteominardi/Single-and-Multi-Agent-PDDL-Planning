@@ -128,11 +128,11 @@ class Intentions {
                         this.requestedIntention,
                     )
                 ) {
-                    console.log(
-                        "swapping",
-                        Intentions.requestedIntention,
-                        newBest,
-                    );
+                    // console.log(
+                    //     "swapping",
+                    //     Intentions.requestedIntention,
+                    //     newBest,
+                    // );
                     previousIntention = this.requestedIntention;
                     Intentions.requestedIntention =
                         await Communication.Agent.swapIntention(
@@ -143,11 +143,11 @@ class Intentions {
                     failed = false;
                 }
 
-                console.log(
-                    BeliefSet.getMe(),
-                    newBest,
-                    Intentions.requestedIntention,
-                );
+                // console.log(
+                //     BeliefSet.getMe(),
+                //     newBest,
+                //     Intentions.requestedIntention,
+                // );
 
                 if (
                     this.shouldStop ||
@@ -155,7 +155,7 @@ class Intentions {
                         (this.requestedIntention.tile.x !== newBest.tile.x ||
                             this.requestedIntention.tile.y !== newBest.tile.y))
                 ) {
-                    console.log("New intention found");
+                    // console.log("New intention found");
 
                     await Communication.Agent.setIntentionStatus(
                         client,
@@ -202,7 +202,7 @@ class Intentions {
             // }
 
             if (!failed) {
-                console.log(BeliefSet.getMe().id, "target tile reached!");
+                // console.log(BeliefSet.getMe().id, "target tile reached!");
                 if (this.requestedIntention !== previousIntention) {
                     await BeliefSet.getMe().performAction(
                         client,

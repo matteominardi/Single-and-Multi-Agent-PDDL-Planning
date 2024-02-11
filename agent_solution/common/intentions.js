@@ -78,7 +78,7 @@ class Intentions {
     }
 
     static getBestIntention() {
-        console.log("queue", this.queue);
+        // console.log("queue", this.queue);
         if (this.queue.length === 0) {
             let options = Desires.computeDesires();
             Intentions.add(options);
@@ -100,7 +100,7 @@ class Intentions {
         // se la path non è valida, la scarto
 
         if (this.shouldStop) {
-            console.log("exiting");
+            // console.log("exiting");
             this.shouldStop = false;
             return;
         }
@@ -141,11 +141,11 @@ class Intentions {
             }
 
             if (this.shouldStop) {
-                console.log(
-                    BeliefSet.getMe().id,
-                    "stopped before reaching target",
-                    this.requestedIntention.tile,
-                );
+                // console.log(
+                //     BeliefSet.getMe().id,
+                //     "stopped before reaching target",
+                //     this.requestedIntention.tile,
+                // );
                 this.shouldStop = false;
                 this.success = false;
                 return;

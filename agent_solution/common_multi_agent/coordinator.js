@@ -451,11 +451,11 @@ class Coordinator {
                     Coordinator.allIntentions[intentionIndex].intention.gain !==
                         999
                 ) {
-                    console.log(
-                        "Intention already present",
-                        desire,
-                        Coordinator.allIntentions[intentionIndex],
-                    );
+                    // console.log(
+                    //     "Intention already present",
+                    //     desire,
+                    //     Coordinator.allIntentions[intentionIndex],
+                    // );
                     Coordinator.allIntentions[intentionIndex].intention.gain =
                         desire.gain;
                 }

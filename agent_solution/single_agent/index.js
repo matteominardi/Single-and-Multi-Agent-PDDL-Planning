@@ -35,19 +35,19 @@ setTimeout(async () => {
         Intentions.filterGains();
 
         let perceivedParcels = Array.from(BeliefSet.getParcels());
-        console.log(
-            "perceivedParcels",
-            perceivedParcels.length,
-            perceivedParcels,
-        );
+        // console.log(
+        //     "perceivedParcels",
+        //     perceivedParcels.length,
+        //     perceivedParcels,
+        // );
 
         let options = Desires.computeDesires();
         Intentions.add(options);
         Intentions.sort();
-        console.log("queue", Intentions.queue.length, Intentions.queue);
+        // console.log("queue", Intentions.queue.length, Intentions.queue);
         let target = Intentions.getBestIntention();
-        console.log("new target", target.tile.x, target.tile.y, target.gain);
-        console.log(BeliefSet.getMe().getMyPosition());
+        // console.log("new target", target.tile.x, target.tile.y, target.gain);
+        // console.log(BeliefSet.getMe().getMyPosition());
 
         if (
             failed &&

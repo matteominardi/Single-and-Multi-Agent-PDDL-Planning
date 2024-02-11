@@ -31,7 +31,7 @@ async function mySolver(
         while (plan.status === "PENDING" && fail < 10) {
             await sleep(500);
             fail++;
-            console.log("waiting for plan");
+            // console.log("waiting for plan");
             plan = await fetch(`${remote_url}${ask.result}`);
             plan = await plan.json();
         }
