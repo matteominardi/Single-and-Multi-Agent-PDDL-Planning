@@ -123,7 +123,7 @@ async function computePath(client, start) {
 
     const domainPddl = fs.readFileSync("./domain.pddl", "utf8");
     let prova = await mySolver(domainPddl, problemPddl.toPddlString());
-    console.log("prova", prova);
+    // console.log("prova", prova);
 
     // if (prova === [[], []]) {
     //     console.log("problem", problemPddl.name);

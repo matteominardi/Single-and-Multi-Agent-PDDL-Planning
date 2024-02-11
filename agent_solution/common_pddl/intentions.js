@@ -111,7 +111,7 @@ class Intentions {
 
             let [actions, tiles] = await mySolver(domain, problem);
 
-            console.log("actions", actions);
+            // console.log("actions", actions);
 
             // const existsIntersection = path.path.some((tile) =>
             //     perceivedAgents.some(

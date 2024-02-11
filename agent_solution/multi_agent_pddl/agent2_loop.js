@@ -13,7 +13,7 @@ import {
 } from "./callbacks.js";
 
 dotenv.config();
-console.log("Starting agent2 Luca");
+console.log("Starting agent2 Mattia");
 console.log("Connecting to", process.env.URL);
 
 const client = new DeliverooApi(
@@ -118,7 +118,7 @@ setTimeout(async () => {
                 });
             })
             .catch(async (error) => {
-                console.log("Sono nel catch", error);
+                // console.log("Sono nel catch", error);
                 failed = true;
                 previousTarget = Intentions.requestedIntention;
                 await Communication.Agent.setIntentionStatus(

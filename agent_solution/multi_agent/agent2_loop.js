@@ -118,7 +118,7 @@ setTimeout(async () => {
                 });
             })
             .catch(async (error) => {
-                console.log("Sono nel catch", error);
+                // console.log("Sono nel catch", error);
                 failed = true;
                 previousTarget = Intentions.requestedIntention;
                 await Communication.Agent.setIntentionStatus(

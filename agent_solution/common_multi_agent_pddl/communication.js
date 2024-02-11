@@ -211,7 +211,7 @@ class Communication {
             if (reply) return reply;
             else
                 return (id, msg) => {
-                    console.log("sending", msg, "to", client);
+                    // console.log("sending", msg, "to", client);
                     return client.ask(id, this.toJSON(msg));
                 };
         }
