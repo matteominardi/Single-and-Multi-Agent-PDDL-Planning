@@ -134,7 +134,7 @@ class Communication {
             // reply = this.fixReply(client, reply);
             msg = this.fromJSON(msg);
             if (msg.message === Messages.SEARCH_COORDINATOR) {
-                console.log("position", msg.args);
+                // console.log("position", msg.args);
                 Coordinator.updateAgent(id, msg.args);
                 console.log(name, "is searching for a coordinator");
                 await client.ask(id, this.toJSON(Messages.IM_COORDINATOR));

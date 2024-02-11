@@ -108,7 +108,7 @@ setTimeout(async () => {
             previousTarget = Intentions.requestedIntention;
         }
 
-        console.log("intention", Intentions.requestedIntention);
+        // console.log("intention", Intentions.requestedIntention);
 
         await Intentions.achieve(client)
             .then(async () => {
